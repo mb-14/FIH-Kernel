@@ -1,10 +1,4 @@
 /*
- *  linux/lib/string.c
- *
- *  Copyright (C) 1991, 1992  Linus Torvalds
- */
-
-/*
  * stupid library routines.. The optimized versions should generally be found
  * as inline code in <asm-xx/string.h>
  *
@@ -23,6 +17,7 @@
 #include <linux/string.h>
 #include <linux/ctype.h>
 #include <linux/module.h>
+#include <linux/memcopy.h>
 
 #ifndef __HAVE_ARCH_STRNICMP
 /**
@@ -560,11 +555,12 @@ EXPORT_SYMBOL(memset);
  */
 void *memcpy(void *dest, const void *src, size_t count)
 {
-	char *tmp = dest;
-	const char *s = src;
+	unsigned long dstp = (unsigned long)dest;
+	unsigned long srcp = (unsigned long)src;
 
-	while (count--)
-		*tmp++ = *s++;
+	/* Copy from the beginning to the end */
+	mem_copy_fwd(dstp, srcp, count);
+
 	return dest;
 }
 EXPORT_SYMBOL(memcpy);
@@ -581,21 +577,15 @@ EXPORT_SYMBOL(memcpy);
  */
 void *memmove(void *dest, const void *src, size_t count)
 {
-	char *tmp;
-	const char *s;
+	unsigned long dstp = (unsigned long)dest;
+	unsigned long srcp = (unsigned long)src;
 
-	if (dest <= src) {
-		tmp = dest;
-		s = src;
-		while (count--)
-			*tmp++ = *s++;
+	if (dest - src >= count) {
+		/* Copy from the beginning to the end */
+		mem_copy_fwd(dstp, srcp, count);
 	} else {
-		tmp = dest;
-		tmp += count;
-		s = src;
-		s += count;
-		while (count--)
-			*--tmp = *--s;
+		/* Copy from the end to the beginning */
+		mem_copy_bwd(dstp, srcp, count);
 	}
 	return dest;
 }
