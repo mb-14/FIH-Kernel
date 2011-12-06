@@ -167,5 +167,17 @@
 #define MSM_AD5_SIZE          (SZ_1M*13)
 
 #endif /* END VMSPLIT_3G */
+//------------------------------------------------FIH
+#ifdef CONFIG_FIH_FXX
 
+#define MSM_PLOG_BASE         IOMEM(0xE1400000)
+#ifdef CONFIG_FIH_PROJECT_FM6 //FM6
+#define MSM_PLOG_PHYS       0x12F00000
+#endif
+#define MSM_PLOG_SIZE         SZ_1M
+#define MSM_PLOG_BASE2        IOMEM(0xE1500000)
+#define MSM_PLOG_PHYS2        0x0
+
+#endif /* CONFIG_FIH_FXX */
+//-------------------------------------------------FIH
 #endif
