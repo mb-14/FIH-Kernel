@@ -66,8 +66,8 @@ ifeq ($(ATH_ANDROID_ENV),yes)
 else
 $(error "WTF?? ANDROID_ENV IS DISABLED!")
 endif
-ifeq ($(ATH_FAKE_EEPROM_USED),yes)
-  EXTRA_CFLAGS += -DFAKE_EEPROM_USED
+ifeq ($(ATH_EEPROM_FILE_USED),yes)
+  EXTRA_CFLAGS += -DEEPROM_FILE_USED
 endif
 # ATHENV
 
