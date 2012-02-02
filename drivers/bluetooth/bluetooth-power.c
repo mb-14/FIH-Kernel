@@ -22,48 +22,42 @@
 
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/kernel.h>
+#include <linux/spinlock.h>
 #include <linux/platform_device.h>
 #include <linux/rfkill.h>
+#include "../../net/rfkill/rfkill.h"
 
-/* FIH, JamesKCTung, 2009/06/16 { */
-/* use rfkill to turn on off wifi */
-#ifdef CONFIG_FIH_FXX
+#ifdef CONFIG_AR6K
 #define WIFI_CONTROL_MASK   0x10000000
-static int  wifi_power_state;
-struct rfkill   *g_WifiRfkill = NULL;
 
-static int (*power_control)(int enable);
-static DEFINE_SPINLOCK(bt_power_lock);
+static int      wifi_power_state;
+struct rfkill   *g_WifiRfkill = NULL;
 #endif
-/* } FIH, JamesKCTung, 2009/06/16 */
+
+static int bluetooth_power_state;
+static int (*power_control)(int enable);
+
+static DEFINE_SPINLOCK(bt_power_lock);
+
 static int bluetooth_toggle_radio(void *data, bool blocked)
 {
 	int ret;
-	int (*power_control)(int enable);
-
-	power_control = data;
+	spin_lock(&bt_power_lock);
 	ret = (*power_control)(!blocked);
+	spin_unlock(&bt_power_lock);
 	return ret;
 }
-/* FIH, JamesKCTung, 2009/06/16 { */
-/* use rfkill to turn on off wifi */
-#ifdef CONFIG_FIH_FXX
-//static int wifi_toggle_radio(void *data, enum rfkill_state state)
+
+#ifdef CONFIG_AR6K
 static int wifi_toggle_radio(void *data, bool blocked)
 {
-	int ret = 0;
-    int state = 0;
-    printk(KERN_ERR "wifi_toggle_radio() start!\n");
-    printk(KERN_ERR "state = 0x%08x", state);
-    state = WIFI_CONTROL_MASK | (!blocked);
+	int ret;
+
 	spin_lock(&bt_power_lock);
-	//printk("wifi_toggle_radio - state=%d", state);
-	//fih_printk(BT_debug_mask, FIH_DEBUG_ZONE_G0,"wifi_toggle_radio - state=%d\n", state);
-	//ret = (*power_control)((state == RFKILL_STATE_UNBLOCKED) ? (1 | WIFI_CONTROL_MASK) : (0| WIFI_CONTROL_MASK) );
-	ret = (*power_control)(state);
+	ret = (*power_control)(blocked ? (0 | WIFI_CONTROL_MASK) : (1| WIFI_CONTROL_MASK) );
 	spin_unlock(&bt_power_lock);
-	printk(KERN_ERR "wifi_toggle_radio() finish!\n");
 	return ret;
 }
 
@@ -74,46 +68,32 @@ static const struct rfkill_ops wifi_power_rfkill_ops = {
 static int wifi_rfkill_probe(struct platform_device *pdev)
 {
 	int ret = -ENOMEM;
-	printk(KERN_ERR "wifi_rfkill_probe() start!\n");
+
 	g_WifiRfkill = rfkill_alloc("wifi_ar6k", &pdev->dev, RFKILL_TYPE_WLAN,
-			      &wifi_power_rfkill_ops,
-			      pdev->dev.platform_data);
-			      
-	//g_WifiRfkill = rfkill_allocate(&pdev->dev, RFKILL_TYPE_WLAN);
+			&wifi_power_rfkill_ops,
+			NULL);
+
 	if (!g_WifiRfkill) {
-		printk(KERN_ERR
-			"%s: rfkill allocate failed\n", __func__);
+		printk(KERN_DEBUG
+				"%s: wifi rfkill register failed=%d\n", __func__,
+				ret);
 		return -ENOMEM;
 	}
-	
-	//ret = rfkill_set_default(RFKILL_TYPE_WLAN,
-	//			RFKILL_STATE_SOFT_BLOCKED);
+
+	/* force Bluetooth off during init to allow for user control */
 	rfkill_init_sw_state(g_WifiRfkill, 1);
 
-	if (g_WifiRfkill) {
-		//g_WifiRfkill->name = "wifi_ar6k";
-		//g_WifiRfkill->toggle_radio = wifi_toggle_radio;
-		//g_WifiRfkill->state = RFKILL_STATE_SOFT_BLOCKED;
-		ret = rfkill_register(g_WifiRfkill);
-		if (ret) {
-			//printk(KERN_DEBUG
-			//	"%s: wifi rfkill register failed=%d\n", __func__,
-			//	ret);
-			//fih_printk(BT_debug_mask, FIH_DEBUG_ZONE_G0,"%s: wifi rfkill register failed=%d\n", __func__,ret);
-			rfkill_destroy(g_WifiRfkill);
-			//rfkill_free(g_WifiRfkill);
-            return -ENOMEM;
-		}
+	ret = rfkill_register(g_WifiRfkill);
+	if (ret) {
+		printk(KERN_DEBUG
+				"%s: rfkill register failed=%d\n", __func__,
+				ret);
+		rfkill_destroy(g_WifiRfkill);
+		return ret;
 	}
-
-	/* force WIFI off during init to allow for user control */
-	//rfkill_switch_all(RFKILL_TYPE_WLAN, RFKILL_STATE_SOFT_BLOCKED);
-	platform_set_drvdata(pdev, g_WifiRfkill);
-	printk(KERN_ERR "wifi_rfkill_probe() finish!\n");
 	return ret;
 }
 #endif
-/* } FIH, JamesKCTung, 2009/06/16 */
 
 static const struct rfkill_ops bluetooth_power_rfkill_ops = {
 	.set_block = bluetooth_toggle_radio,
@@ -126,11 +106,10 @@ static int bluetooth_power_rfkill_probe(struct platform_device *pdev)
 
 	rfkill = rfkill_alloc("bt_power", &pdev->dev, RFKILL_TYPE_BLUETOOTH,
 			      &bluetooth_power_rfkill_ops,
-			      pdev->dev.platform_data);
+			      NULL);
 
 	if (!rfkill) {
-		printk(KERN_DEBUG
-			"%s: rfkill allocate failed\n", __func__);
+		dev_err(&pdev->dev, "rfkill allocate failed\n");
 		return -ENOMEM;
 	}
 
@@ -139,9 +118,7 @@ static int bluetooth_power_rfkill_probe(struct platform_device *pdev)
 
 	ret = rfkill_register(rfkill);
 	if (ret) {
-		printk(KERN_DEBUG
-			"%s: rfkill register failed=%d\n", __func__,
-			ret);
+		dev_err(&pdev->dev, "rfkill register failed=%d\n", ret);
 		rfkill_destroy(rfkill);
 		return ret;
 	}
@@ -155,67 +132,117 @@ static void bluetooth_power_rfkill_remove(struct platform_device *pdev)
 {
 	struct rfkill *rfkill;
 
+	dev_dbg(&pdev->dev, "%s\n", __func__);
+
 	rfkill = platform_get_drvdata(pdev);
 	if (rfkill)
 		rfkill_unregister(rfkill);
-/* FIH, JamesKCTung, 2009/06/16 { */
-/* Remove WIFI RFKILL */
-#ifdef CONFIG_FIH_FXX
+#ifdef CONFIG_AR6K
 	if (g_WifiRfkill)
 		rfkill_unregister(g_WifiRfkill);
 #endif
-/* } FIH, JamesKCTung, 2009/06/16 */
 	rfkill_destroy(rfkill);
 	platform_set_drvdata(pdev, NULL);
 }
 
-static int __init bt_power_probe(struct platform_device *pdev)
+static int bluetooth_power_param_set(const char *val, struct kernel_param *kp)
+{
+       int ret;
+
+       printk(KERN_DEBUG
+               "%s: previous power_state=%d\n",
+               __func__, bluetooth_power_state);
+
+       /* lock change of state and reference */
+       spin_lock(&bt_power_lock);
+       ret = param_set_bool(val, kp);
+       if (power_control) {
+               if (!ret)
+                       ret = (*power_control)(bluetooth_power_state);
+               else
+                       printk(KERN_ERR "%s param set bool failed (%d)\n",
+                                       __func__, ret);
+       } else {
+               printk(KERN_INFO
+                       "%s: deferring power switch until probe\n",
+                       __func__);
+       }
+       spin_unlock(&bt_power_lock);
+       printk(KERN_INFO
+               "%s: current power_state=%d\n",
+               __func__, bluetooth_power_state);
+       return ret;
+}
+
+module_param_call(power, bluetooth_power_param_set, param_get_bool,
+                 &bluetooth_power_state, S_IWUSR | S_IRUGO);
+
+
+static int __devinit bt_power_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 
-	printk(KERN_DEBUG "%s\n", __func__);
+	dev_dbg(&pdev->dev, "%s\n", __func__);
 
 	if (!pdev->dev.platform_data) {
-		printk(KERN_ERR "%s: platform data not initialized\n",
-				__func__);
+		dev_err(&pdev->dev, "platform data not initialized\n");
 		return -ENOSYS;
 	}
 
-/* FIH, JamesKCTung, 2009/06/03 { */
-#ifdef CONFIG_FIH_FXX
-	wifi_power_state = 0;
-	power_control = pdev->dev.platform_data;
+#ifdef CONFIG_AR6K
+    wifi_power_state = 0;
 #endif
-/* } FIH, JamesKCTung, 2009/06/03 */
-/* FIH, JamesKCTung, 2009/06/16 { */
-#ifndef CONFIG_FIH_FXX
-	ret = (*power_control)(bluetooth_power_state);
-#endif
-/* } FIH, JamesKCTung, 2009/06/16 */
-	ret = bluetooth_power_rfkill_probe(pdev);
 
-/* FIH, JamesKCTung, 2009/06/16 { */
-/* use rfkill to turn on off wifi */
-#ifdef CONFIG_FIH_FXX
-	wifi_rfkill_probe(pdev);
+	spin_lock(&bt_power_lock);
+	power_control = pdev->dev.platform_data;
+
+	if (bluetooth_power_state) {
+		printk(KERN_INFO
+			"%s: handling deferred power switch\n",
+			__func__);
+	}
+	//ret = (*power_control)(bluetooth_power_state);
+	spin_unlock(&bt_power_lock);
+
+
+	if (!ret && !bluetooth_power_state &&
+		    bluetooth_power_rfkill_probe(pdev))
+		ret = -ENOMEM;
+
+#ifdef CONFIG_AR6K
+    wifi_rfkill_probe(pdev);
 #endif
-/* } FIH, JamesKCTung, 2009/06/16 */
+
+
 	return ret;
 }
 
 static int __devexit bt_power_remove(struct platform_device *pdev)
 {
-	printk(KERN_DEBUG "%s\n", __func__);
+	int ret;
+
+	dev_dbg(&pdev->dev, "%s\n", __func__);
 
 	bluetooth_power_rfkill_remove(pdev);
 
-/* FIH, JamesKCTung, 2009/06/03 { */
-#ifdef CONFIG_FIH_FXX
-	wifi_power_state=0;
-	(*power_control)(wifi_power_state | WIFI_CONTROL_MASK );
+	if (!power_control) {
+		printk(KERN_ERR "%s: power_control function not initialized\n",
+				__func__);
+		return -ENOSYS;
+	}
+	spin_lock(&bt_power_lock);
+	bluetooth_power_state = 0;
+	ret = (*power_control)(bluetooth_power_state);
+
+#ifdef CONFIG_AR6K
+    wifi_power_state=0;
+    ret = (*power_control)(WIFI_CONTROL_MASK | wifi_power_state);
 #endif
-/* } FIH, JamesKCTung, 2009/06/03 */
-	return 0;
+
+	power_control = NULL;
+	spin_unlock(&bt_power_lock);
+
+	return ret;
 }
 
 static struct platform_driver bt_power_driver = {
@@ -231,20 +258,19 @@ static int __init bluetooth_power_init(void)
 {
 	int ret;
 
-	printk(KERN_DEBUG "%s\n", __func__);
 	ret = platform_driver_register(&bt_power_driver);
 	return ret;
 }
 
 static void __exit bluetooth_power_exit(void)
 {
-	printk(KERN_DEBUG "%s\n", __func__);
 	platform_driver_unregister(&bt_power_driver);
 }
 
 MODULE_LICENSE("GPL v2");
+MODULE_AUTHOR("QUALCOMM Incorporated");
 MODULE_DESCRIPTION("MSM Bluetooth power control driver");
-MODULE_VERSION("1.30");
+MODULE_VERSION("1.40");
 
 module_init(bluetooth_power_init);
 module_exit(bluetooth_power_exit);
