@@ -7090,7 +7090,7 @@ MODULE_ALIAS(DRIVER_NAME);
 
 static int __init msm_nand_init(void)
 {
-	msm_nand_debug_mask = *(uint32_t*)NAND_DEBUG_MASK_OFFSET;
+	
 	return platform_driver_register(&msm_nand_driver);
 }
 

@@ -925,12 +925,8 @@ static int __init diagchar_init(void)
 {
 	dev_t dev;
 	int error;
-    #ifdef CONFIG_FIH_FXX
-    diag_char_debug_mask = *(uint32_t*)DIAGCHAR_DEBUG_MASK_OFFSET;
-	fih_printk(diag_char_debug_mask, FIH_DEBUG_ZONE_G0, KERN_INFO "diagchar initializing ..\n");
-    #else
     printk(KERN_INFO "diagfwd initializing ..\n");
-    #endif
+  
 	driver = kzalloc(sizeof(struct diagchar_dev) + 5, GFP_KERNEL);
 
 	if (driver) {

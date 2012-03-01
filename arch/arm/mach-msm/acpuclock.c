@@ -335,14 +335,7 @@ static struct pll_freq_tbl_map acpu_freq_tbl_list[] = {
 	{ 0, 0, 0, 0 }
 };
 
-//[+++][ChiaYuan]Add for Acpuclock debug
-#ifdef CONFIG_FIH_FXX
-static int msm_acpu_debug_mask = 0;
-module_param_named(
-	debug_mask, msm_acpu_debug_mask, uint, 0644);
-#endif
-//[---][ChiaYuan]Add for Acpuclock debug
-#ifdef CONFIG_CPU_FREQ_MSM
+
 static struct cpufreq_frequency_table freq_table[20];
 
 static void __init cpufreq_table_init(void)
@@ -372,7 +365,7 @@ static void __init cpufreq_table_init(void)
 
 	pr_info("%d scaling frequencies supported.\n", freq_cnt);
 }
-#endif
+
 
 unsigned long clk_get_max_axi_khz(void)
 {
@@ -684,8 +677,7 @@ int acpuclk_set_rate(int cpu, unsigned long rate, enum setrate_reason reason)
 	if (strt_s->axiclk_khz != tgt_s->axiclk_khz) {
 		res = ebi1_clk_set_min_rate(CLKVOTE_ACPUCLK,
 						tgt_s->axiclk_khz * 1000);
-    fih_printk(msm_acpu_debug_mask, FIH_DEBUG_ZONE_G0,"acpuclock: Switching from AXI rate %u -> %u\n",
-		       strt_s->axiclk_khz * 1000, tgt_s->axiclk_khz * 1000);
+    
 		if (res < 0)
 			pr_warning("Setting AXI min rate failed (%d)\n", res);
 	}
@@ -1056,8 +1048,6 @@ void acpuclk_set_lcdcoff_wait_for_irq(int on)
     		
     		rc = ebi1_clk_set_min_rate(CLKVOTE_ACPUCLK,
     						160000 * 1000);
-            fih_printk(msm_acpu_debug_mask, FIH_DEBUG_ZONE_G0,
-                "acpuclock: keep AXI is 160MHz\n");
         }
         else
         {
@@ -1074,8 +1064,6 @@ void acpuclk_set_lcdcoff_wait_for_irq(int on)
     		
     		rc = ebi1_clk_set_min_rate(CLKVOTE_ACPUCLK,
     						200000 * 1000);
-            fih_printk(msm_acpu_debug_mask, FIH_DEBUG_ZONE_G0,
-                "acpuclock: keep AXI is 200MHz\n");
         }
 /*} FIH, SimonSSChang, 2010/06/24 */
 		
@@ -1098,14 +1086,11 @@ void acpuclk_set_lcdcoff_wait_for_irq(int on)
         if(degrade_freq_flag)
         {
 		    acpu_freq_tbl[8].axiclk_khz = 160000;
-            fih_printk(msm_acpu_debug_mask, FIH_DEBUG_ZONE_G0,
-                "acpuclock: acpu_freq_tbl[8] AXI is 160MHz\n");
+          
         }
         else
         {
     		acpu_freq_tbl[8].axiclk_khz = 200000;
-            fih_printk(msm_acpu_debug_mask, FIH_DEBUG_ZONE_G0,
-                "acpuclock: acpu_freq_tbl[8] AXI is 200MHz\n");
         }
 /*} FIH, SimonSSChang, 2010/06/24 */
     }
@@ -1127,12 +1112,7 @@ void __init msm_acpu_clock_init(struct msm_acpu_clock_platform_data *clkdata)
 
 	pr_info("acpu_clock_init()\n");
 
-/* FIH, SimonSSChang, 2010/01/04 { */
-/* [F0X_CR], add debug mask */
-#ifdef CONFIG_FIH_FXX
-    msm_acpu_debug_mask = *(uint32_t *)DCVS_DEBUG_MASK_OFFSET;
-#endif
-/* } FIH, SimonSSChang, 2010/01/04 */
+
 
 	mutex_init(&drv_state.lock);
 	drv_state.acpu_switch_time_us = clkdata->acpu_switch_time_us;

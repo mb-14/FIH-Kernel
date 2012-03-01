@@ -1190,7 +1190,7 @@ static int __init panjit_init( void )
 {
     panjit_msg(INFO, "[FM6]panjit_init\r\n");
     
-    msm_cap_touch_debug_mask = *(uint32_t *)TOUCH_DEBUG_MASK_OFFSET;  //Added for debug mask (2010/01/04)
+    
 
     return i2c_add_driver(&panjit_i2c_driver);
 

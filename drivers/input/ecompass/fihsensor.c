@@ -761,7 +761,7 @@ static int __init fihsensor_init(void)
 
 	int hwid = FIH_READ_HWID_FROM_SMEM();
 
-	fihsensor_debug_mask = *(uint32_t *)GS_DEBUG_MASK_OFFSET;
+	
 
 	if(hwid >= CMCS_HW_VER_EVB1 && hwid <= CMCS_RTP_MP3) {
 		// f902/f910

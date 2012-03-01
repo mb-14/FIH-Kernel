@@ -286,11 +286,7 @@ static struct timed_output_dev pmic_vibrator = {
 
 void __init msm_init_pmic_vibrator(void)
 {
-/* FIH, KennyChu, 2010/01/04, add debug mask {*/
-#ifdef CONFIG_FIH_FXX
-    vibrator_debug_mask = *(uint32_t *)VB_DEBUG_MASK_OFFSET;
-#endif
-/* } FIH, KennyChu, 2010/01/04*/
+
 
 /* FIH, KennyChu, 2010/04/30, change vibrate level in FA3 model {*/
     g_viHWID = FIH_READ_HWID_FROM_SMEM();

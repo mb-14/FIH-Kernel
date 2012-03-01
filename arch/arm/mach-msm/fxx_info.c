@@ -12,12 +12,7 @@
 #include <mach/msm_iomap.h>
 #include <linux/io.h>
 
-/*FIHTDC, WillChen changes because PLOG address has changed by Tiger { */
-//#define DBGMSKBUF (MSM_PLOG_BASE + 0x80000)
-#define DBGMSKBUF	(MSM_PLOG_BASE2 + 0XFF000)
-/*FIHTDC, WillChen changes because PLOG address has changed by Tiger } */
 
-char * debug_mask = (char *) DBGMSKBUF;
 static struct proc_dir_entry *mask_file;
 #define	MASKSIZE   	4096
 #endif
@@ -630,36 +625,7 @@ static int proc_read_power_on_cause(char *page, char **start, off_t off,
 	return proc_calc_metrics(page, start, off, count, eof, len);	
 }
 #endif
-//FIH, JamesKCTung, 2009/11/03 +++
-/* Add dbgmask partition*/
-#ifdef CONFIG_PRINTK
-static int proc_read_debug_mask(char *page, char **start, off_t off,
-				 int count, int *eof, void *data)
-{
 
-	int i,j;
-	
-	for (i=0,j=0; i<MASKSIZE; i++,j=j+2)
-		sprintf((page+j),"%02x",debug_mask[i]);
-	
-	return MASKSIZE;
-}
-static int proc_write_debug_mask(struct file *file, const char *buffer, 
-				 unsigned long count, void *data)
-{
-	//char mask[16];
-/*FIHTDC, WillChen add for debug mask { */
-	printk("proc_write_debug_mask()\n");
-	//if ( copy_from_user(debug_mask,buffer,count))
-	//	return -EFAULT;
-	if (buffer)
-		memcpy(debug_mask,buffer,count);
-
-	return count;
-/*FIHTDC, WillChen add for debug mask } */
-}
-#endif
-//FIH, JamesKCTung, 2009/11/03 ---
 static struct {
 		char *name;
 		int (*read_proc)(char*,char**,off_t,int,int*,void*);
@@ -699,18 +665,6 @@ void adq_info_init(void)
 	for (p = adq_info; p->name; p++)
 		create_proc_read_entry(p->name, 0, NULL, p->read_proc, NULL);
 		
-//FIH, JamesKCTung, 2009/11/03 +++
-/* Add dbgmask partition*/
-#ifdef CONFIG_PRINTK
-	mask_file = create_proc_entry("debug_mask",0777,NULL);
-	mask_file->read_proc = proc_read_debug_mask;
-	mask_file->write_proc = proc_write_debug_mask;
-	/* FIH, JiaHao, 2010/08/20 { */
-	/* ./android/kernel/include/linux/proc_fs.h no define owner at 6030cs */
-	//mask_file->owner = THIS_MODULE;
-	/* FIH, JiaHao, 2010/08/20 } */
-#endif
-//FIH, JamesKCTung, 2009/11/03 ---
 }
 EXPORT_SYMBOL(adq_info_init);
 

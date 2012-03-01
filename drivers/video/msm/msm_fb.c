@@ -2701,8 +2701,7 @@ int __init msm_fb_init(void)
 {
 	int rc = -ENODEV;
 
-	debug_mask_lcm=*(u32*)LCD_DEBUG_MASK_OFFSET;
-//	debug_mask_lcm=0xffff;//chandler_porting
+	
     printk("%s(): debug_mask_lcm(0x%x)\n", __func__, debug_mask_lcm);
 
 	if (msm_fb_register_driver())

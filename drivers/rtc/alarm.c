@@ -165,7 +165,7 @@ static void alarm_enqueue_locked(struct alarm *alarm)
 void alarm_init(struct alarm *alarm,
 	enum android_alarm_type type, void (*function)(struct alarm *))
 {
-    debug_mask = *(uint32_t*)ALARM_DEBUG_MASK_OFFSET;
+    
 	RB_CLEAR_NODE(&alarm->node);
 	alarm->type = type;
 	alarm->function = function;

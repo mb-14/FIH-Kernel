@@ -1170,11 +1170,6 @@ static struct platform_driver Q7x27_kybd_driver = {
 
 static int __init Q7x27_kybd_init(void)
 {
-    //++misty for debug mask
-    Q7x27_kybd_debug_mask = *(uint32_t *)KPD_DEBUG_MASK_OFFSET;
-    //--misty for debug mask
-// FIH, WillChen, 2009/08/21 ++
-//Dump cpu and mem info when three key panic
 #ifdef CONFIG_FIH_FXX_FORCEPANIC
 	create_proc_read_entry("panicdump", 0, NULL, panic_read_proc, NULL);
 #endif
@@ -1275,7 +1270,7 @@ static int Q7x27_kybd_param_set(const char *val, struct kernel_param *kp)
     else
     {
         //printk(KERN_ERR "has alreay set EnableKeyInt\n"); 
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"has alreay set EnableKeyInt\n"); 
+       // fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"has alreay set EnableKeyInt\n"); 
         return 0;    
     }
 

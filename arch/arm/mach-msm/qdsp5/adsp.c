@@ -35,15 +35,12 @@
 #include <linux/wakelock.h>
 #include <mach/debug_mm.h>
 
-/* FIH, Karen Liao, 2010/01/04 { */
-/* [F0X.B-9394], Add debug mask mechanism for audio driver.*/
+
 #if CONFIG_FIH_FXX
 #include <mach/msm_iomap.h>
-int fih_audio_debug_mask;
+int fih_audio_debug_mask=0;
 module_param_named(debug_mask, fih_audio_debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 #endif
-/* } FIH, Karen Liao, 2010/01/04 */
-
 static struct wake_lock adsp_wake_lock;
 static inline void prevent_suspend(void)
 {
@@ -1221,14 +1218,6 @@ static char msm_adsp_driver_name[] = "rs00000000";
 static int __init adsp_init(void)
 {
 	int rc;
-
-/* FIH, Karen Liao, 2010/01/04 { */
-/* [F0X.B-9394], Add debug mask mechanism for audio driver.*/
-#if CONFIG_FIH_FXX
-	fih_audio_debug_mask = *(int*)WAV_DEBUG_MASK_OFFSET;	
-#endif
-/* } FIH, Karen Liao, 2010/01/04 */
-
 	rpc_adsp_rtos_atom_prog = 0x3000000a;
 	rpc_adsp_rtos_atom_vers = 0x10001;
 	rpc_adsp_rtos_atom_vers_comp = 0x00010001;

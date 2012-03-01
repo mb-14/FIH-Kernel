@@ -1858,9 +1858,7 @@ static void msm_pm_restart(char str, const char *cmd)
 #define FLUSH_CACHE_SIZE    0x40000 // 256KB
     /* FIH, Paul Huang, 2009/08/12 { */
 	uint32_t oem_cmd = SMEM_PROC_COMM_OEM_RESET_CHIP_EBOOT;
-    /* FIH, Paul Huang, 2009/10/20 { */
-    uint32_t ptr = (uint32_t)(MSM_PLOG_BASE+0xFF000);
-    /* FIH, Paul Huang, 2009/10/20 } */
+  
 	msm_rpcrouter_close();
 
 	//SW2-5-1-BH-DbgCfgTool-00+[
@@ -1873,9 +1871,8 @@ static void msm_pm_restart(char str, const char *cmd)
     if (panic_enter_download)
     {
         restart_reason = 0x46544443;
-        *(uint32_t *)ptr = 0x55AA55AA;
-        ptr+=4;
-        asm volatile("mov r4, %0, lsr #12" : "=r" (ptr));
+       
+       // asm volatile("mov r4, %0, lsr #12" : "=r" (ptr));
         asm volatile("mov r4, r4, lsl #12");
         //asm volatile("mov r4, %0" : "=r" (ptr));
         //asm volatile("mov r3, #0xE14FF000");
@@ -1921,9 +1918,9 @@ static void msm_pm_restart(char str, const char *cmd)
         asm volatile("str r0, [r4, #4]!");
 
         //Because I can't flush the data cache successfully, I copy the stack to plog's section(0xE140000).
-        asm volatile("mov %0, r13" : "=r" (ptr));
+       // asm volatile("mov %0, r13" : "=r" (ptr));
         //memcpy((void*)0xE1480000, (void*)ptr, 0x7F000);
-        memcpy((void*)(0xE1480000 - FLUSH_CACHE_SIZE), (void*)ptr, FLUSH_CACHE_SIZE);
+     //   memcpy((void*)(0xE1480000 - FLUSH_CACHE_SIZE), (void*)ptr, FLUSH_CACHE_SIZE);
     }
     /* FIH, Paul Huang, 2009/10/20 } */
 	msm_proc_comm_oem(PCOM_CUSTOMER_CMD1, &oem_cmd, 0, &restart_reason);
@@ -1984,13 +1981,6 @@ static int __init msm_pm_init(void)
 	struct proc_dir_entry *d_entry;
 #endif
 	int ret;
-/* FIH, SimonSSChang, 2010/01/04 { */
-/* [F0X_CR], add debug mask */
-#ifdef CONFIG_FIH_FXX
-    msm_pm_debug_mask = *(uint32_t *)PWR_DEBUG_MASK_OFFSET;
-#endif
-/* } FIH, SimonSSChang, 2010/01/04 */
-
 	pm_power_off = msm_pm_power_off;
 	arm_pm_restart = msm_pm_restart;
 	register_reboot_notifier(&msm_reboot_notifier);

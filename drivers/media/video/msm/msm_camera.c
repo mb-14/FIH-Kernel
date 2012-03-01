@@ -2601,12 +2601,6 @@ int msm_camera_drv_start(struct platform_device *dev,
 			return rc;
 		}
 
-/* FIH, Charles Huang, 2009/12/28 { */
-/* [FXX_CR], debug mask */
-#ifdef CONFIG_FIH_FXX
-		cam_debug_mask = *(uint32_t *)CAM_DEBUG_MASK_OFFSET;
-#endif
-/* } FIH, Charles Huang, 2009/12/28 */
 
 	}
 

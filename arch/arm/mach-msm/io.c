@@ -81,26 +81,6 @@ static struct map_desc msm_io_desc[] __initdata = {
 		.length =   MSM_SHARED_RAM_SIZE,
 		.type =     MT_DEVICE,
 	},
-#ifdef CONFIG_FIH_FXX
-	/* FIH, Debbie, 2010/03/04 { */
-	/* for plog */
-	{
-		.virtual =  (unsigned long) MSM_PLOG_BASE,
-		.pfn =      __phys_to_pfn(MSM_PLOG_PHYS),
-		.length =   MSM_PLOG_SIZE,
-		.type =     MT_DEVICE,
-	},
-	/* FIH, Debbie, 2010/03/04 } */
-	/* FIH, Tiger, 2010/3/24 { */
-	/* modify plog placement */		
-	{
-		.virtual =  (unsigned long) MSM_PLOG_BASE2,
-		.pfn =      __phys_to_pfn(MSM_PLOG_PHYS2),
-		.length =   MSM_PLOG_SIZE,
-		.type =     MT_DEVICE,
-	},
-	/* FIH, Tiger, 2010/3/24 } */
-#endif
 };
 
 void __init msm_map_common_io(void)

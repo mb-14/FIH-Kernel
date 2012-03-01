@@ -2225,10 +2225,6 @@ static int __init goldfish_battery_init(void)
 		goto ERROR;
 	}
 	
-	/* FIH, Michael Kao, 2010/01/03{ */
-	/* [FXX_CR], add for debug mask*/
-	battery_debug_mask = *(int*)BAT_DEBUG_MASK_OFFSET;
-	/* FIH, Michael Kao, 2010/01/03{ */
 
 	//FIHTDC, Adds for FM6 gas gauge, NeoChen, 2010.03.25 +
 	check_OCV_table();

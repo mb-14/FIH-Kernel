@@ -1173,11 +1173,7 @@ static int __init msm_serial_init(void)
 #endif
 //SW2-5-1-BH-DbgCftTool-00+]
 
-	/* FIH, Debbie, 2010/01/04 {*/
-	#ifdef CONFIG_FIH_FXX
-	serial_debug_mask = *(uint32_t *)SER_DEBUG_MASK_OFFSET;
-	#endif
-	/* FIH, Debbie, 2010/01/04 }*/
+
 
 	ret = uart_register_driver(&msm_uart_driver);
 	if (unlikely(ret))

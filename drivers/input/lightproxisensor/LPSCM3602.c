@@ -631,7 +631,7 @@ static int __init cm3602_init(void)
 	int ret, rc;
 	struct proc_dir_entry *entry; 	
 
-	cm3602_debug_mask = *(uint32_t *)ALS_DEBUG_MASK_OFFSET;
+	
 	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"cm3602_init\n");
 	//use misc major number plus random minor number, and init device
 	/*

@@ -606,9 +606,6 @@ static int __init max8831_init(void)
 	  	printk(KERN_ERR "%s: create proc file failed\n", __func__);
 		goto driver_del;
 	}
-
-	max8831_debug_mask = *(uint32_t *)BKL_DEBUG_MASK_OFFSET;
-
 	//all successfully.
 	return ret;
 

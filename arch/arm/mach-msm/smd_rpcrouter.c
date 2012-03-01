@@ -1037,7 +1037,7 @@ static void do_read_data(struct work_struct *work)
 	}
 #endif
 
-	//SW2-5-1-BH-DbgCfgTool-00*[
+	/*//SW2-5-1-BH-DbgCfgTool-00*[
 	if (debug_rpcmsg_enable)
 	{
 		rq = (struct rpc_request_hdr *) frag->data;
@@ -1050,7 +1050,7 @@ static void do_read_data(struct work_struct *work)
 		}
 	}
 	//SW2-5-1-BH-DbgCfgTool-00*]
-
+*/
 	ept = rpcrouter_lookup_local_endpoint(hdr.dst_cid);
 	if (!ept) {
 		DIAG("no local ept for cid %08x\n", hdr.dst_cid);
