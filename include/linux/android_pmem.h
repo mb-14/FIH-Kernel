@@ -101,6 +101,7 @@ enum pmem_allocator_type {
 	 * defined
 	 */
 	PMEM_ALLOCATORTYPE_BITMAP = 0, /* forced to be zero here */
+	PMEM_ALLOCATORTYPE_SYSTEM,
 
 	PMEM_ALLOCATORTYPE_ALLORNOTHING,
 	PMEM_ALLOCATORTYPE_BUDDYBESTFIT,
@@ -166,4 +167,3 @@ int pmem_remap(struct pmem_region *region, struct file *file,
 #endif /* __KERNEL__ */
 
 #endif //_ANDROID_PPP_H_
-
