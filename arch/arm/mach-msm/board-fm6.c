@@ -1005,7 +1005,7 @@ static unsigned bt_config_init[] = {
 	GPIO_CFG(76, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),   /* 3.3V */
 	GPIO_CFG(77, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),   /* 1.5V */
 	GPIO_CFG(34, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),   /* 1.2V */
-	GPIO_CFG(27, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),   /* BT_RST */
+	GPIO_CFG(17, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),   /* BT_RST */
 	GPIO_CFG(37, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),   /* HOST_WAKE_BT */
 	GPIO_CFG(42, 0, GPIO_INPUT, GPIO_NO_PULL, GPIO_2MA),           /* BT_WAKE_HOST */
 	GPIO_CFG(68, 1, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),	/* PCM_DOUT */
@@ -1050,8 +1050,8 @@ static void init_Bluetooth_gpio_table(void)
         if (rc)	printk(KERN_ERR "%s: 1.2V 34 setting failed! rc = %d\n", __func__, rc);
         rc = gpio_request(35, "WIFI_RST");
         if (rc)	printk(KERN_ERR "%s: WIFI_RST 35 setting failed! rc = %d\n", __func__, rc);
-        rc = gpio_request(27, "BT_RST");
-        if (rc)	printk(KERN_ERR "%s: BT_RST 27 setting failed! rc = %d\n", __func__, rc);
+        rc = gpio_request(17, "BT_RST");
+        if (rc)	printk(KERN_ERR "%s: BT_RST 17 setting failed! rc = %d\n", __func__, rc);
 
 }
 
@@ -1066,7 +1066,7 @@ static int bluetooth_power(int on)
 	gpio_tlmm_config(GPIO_CFG(46, 3, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_2MA),GPIO_ENABLE);	/* Tx */
 	gpio_tlmm_config(GPIO_CFG(37, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA), GPIO_ENABLE);  /* HOST_WAKE_BT */
 	gpio_tlmm_config(GPIO_CFG(42, 0, GPIO_INPUT, GPIO_NO_PULL, GPIO_2MA), GPIO_ENABLE);          /* BT_WAKE_HOST */
-	gpio_tlmm_config(GPIO_CFG(27, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);   /* BT_RST */
+	gpio_tlmm_config(GPIO_CFG(17, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);   /* BT_RST */
 	gpio_tlmm_config(GPIO_CFG(76, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);   /* 3.3V */
 	gpio_tlmm_config(GPIO_CFG(77, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);   /* 1.5V */
 	gpio_tlmm_config(GPIO_CFG(34, 0, GPIO_OUTPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);   /* 1.2V */
@@ -1110,7 +1110,7 @@ static int bluetooth_power(int on)
 	//power control before module on/off
 	if(!bConfigWIFI &&  !bt_status) {     //Turn BT off
 		printk(KERN_DEBUG "%s : Turn BT off.\n", __func__);
-		gpio_direction_output(27,0);    
+		gpio_direction_output(17,0);    
 		gpio_tlmm_config(GPIO_CFG(43, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);	/* RFR */
 		gpio_tlmm_config(GPIO_CFG(44, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);	/* CTS */
 		gpio_tlmm_config(GPIO_CFG(45, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);	/* Rx */
@@ -1119,9 +1119,9 @@ static int bluetooth_power(int on)
 		gpio_tlmm_config(GPIO_CFG(42, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE); /* BT_WAKE_HOST */
 	}else if(!bConfigWIFI &&  bt_status){     //Turn BT on        
 		printk(KERN_DEBUG "%s : Turn BT on.\n", __func__);
-		gpio_direction_output(27,0);
+		gpio_direction_output(17,0);
 		mdelay(10);
-		gpio_direction_output(27,1);
+		gpio_direction_output(17,1);
 		mdelay(10);
 	}else if(bConfigWIFI && wifi_status) {  //Turn WIFI on
 		printk(KERN_DEBUG "%s : Turn WIFI on.\n", __func__);
