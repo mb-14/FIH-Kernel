@@ -941,8 +941,6 @@ static int msm_read_serial_number_from_nvitem()
 
 static uint32_t msm_sdcc_setup_power(struct device *dv, unsigned int vdd);
 static uint32_t msm_ar6k_sdcc_setup_power(struct device *dv, unsigned int vdd);
-int static ar6k_wifi_suspend(int dev_id);
-int static ar6k_wifi_resume(int dev_id);
 static void (*ar6k_wifi_status_cb)(int card_present, void *dev_id);
 static void *ar6k_wifi_status_cb_devid;
 static unsigned int  wifi_power_on = 0;
@@ -965,13 +963,11 @@ static struct mmc_platform_data ar6k_wifi_data = {
 	.mmc_bus_width  = MMC_CAP_4_BIT_DATA,
 	.status			= ar6k_wifi_status,
 	.register_status_notify	= ar6k_wifi_status_register,
-	.sdio_suspend = ar6k_wifi_suspend,
-	.sdio_resume = ar6k_wifi_resume,
 	.dummy52_required = 1,	
 	.msmsdcc_fmin	= 144000,
 	.msmsdcc_fmid	= 24576000,
 	.msmsdcc_fmax	= 49152000,
-	.nonremovable	= 1,
+	.nonremovable	= 0,
 };
 /* } FIH, JamesKCTung, 2009/05/11 */
 #ifdef CONFIG_BT
@@ -1117,13 +1113,16 @@ static int bluetooth_power(int on)
 		gpio_tlmm_config(GPIO_CFG(46, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE);	/* Tx */
 		gpio_tlmm_config(GPIO_CFG(37, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE); /* HOST_WAKE_BT */
 		gpio_tlmm_config(GPIO_CFG(42, 0, GPIO_INPUT, GPIO_PULL_DOWN, GPIO_2MA),GPIO_ENABLE); /* BT_WAKE_HOST */
-	}else if(!bConfigWIFI &&  bt_status){     //Turn BT on        
+	
+       }else if(!bConfigWIFI &&  bt_status){     //Turn BT on        
 		printk(KERN_DEBUG "%s : Turn BT on.\n", __func__);
 		gpio_direction_output(17,0);
 		mdelay(10);
 		gpio_direction_output(17,1);
 		mdelay(10);
-	}else if(bConfigWIFI && wifi_status) {  //Turn WIFI on
+	
+
+    }else if(bConfigWIFI && wifi_status) {  //Turn WIFI on
 		printk(KERN_DEBUG "%s : Turn WIFI on.\n", __func__);
 
 		/* let ar6000 driver to turn on/off power when enter suspend/resume */
@@ -2678,17 +2677,6 @@ static void msm_sdcc_setup_gpio(int dev_id, unsigned int enable)
 
 /* FIH, JamesKCTung, 2009/07/09 { */
 #ifdef CONFIG_FIH_FXX
-static int  ar6k_wifi_suspend(int dev_id)
-{
-    bluetooth_power(WIFI_CONTROL_MASK | 0);  
-    return 1;
-}
-
-static int  ar6k_wifi_resume(int dev_id)
-{
-    bluetooth_power(WIFI_CONTROL_MASK | 1);    
-    return 1;
-}
 
 static uint32_t msm_ar6k_sdcc_setup_power(struct device *dv, unsigned int vdd)
 {
