@@ -1082,6 +1082,7 @@ static int bluetooth_power(int on)
 			spin_unlock(&wif_bt_lock);
 			return 0;
 		}
+                 printk(KERN_DEBUG "you are at bConfigWifi\n");
 		if(wifi_status && !bt_status)
 			module_status = MODULE_TURN_ON;
 		else if(!wifi_status && !bt_status)
@@ -1097,6 +1098,7 @@ static int bluetooth_power(int on)
 			spin_unlock(&wif_bt_lock);
 			return 0;
 		}
+                printk(KERN_DEBUG "you are at WifiStatus\n");
 		if(bt_status && !wifi_status)
 			module_status = MODULE_TURN_ON;
 		else if(!wifi_status && !bt_status)
