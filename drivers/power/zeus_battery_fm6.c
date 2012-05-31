@@ -392,10 +392,10 @@ static struct goldfish_battery_data *data;
 bool wakelock_flag;
 
 /* temporary variable used between goldfish_battery_probe() and goldfish_battery_open() */
-static struct goldfish_battery_data *battery_data;  /*看起來沒用到，要再問問Michael*/
+static struct goldfish_battery_data *battery_data;  /*\AC搯_\A8茖S\A5峔\EC\A1A\ADn\A6A\B0搯\DDMichael*/
 
 
-/* For device state, 看起來沒用到 ++*/
+/* For device state, \AC搯_\A8茖S\A5峔\EC ++*/
 enum{
 	battery_charger_type=0,
 	wifi_state,
@@ -410,7 +410,7 @@ struct F9_device_state{
 	int F9_phone_state;
 };
 static struct F9_device_state batt_state;
-/* For device state, 看起來沒用到 --*/
+/* For device state, \AC搯_\A8茖S\A5峔\EC --*/
 
 
 /* FIHTDC, MayLi, add for recording battery fault state, 2010.04.13
@@ -1555,10 +1555,10 @@ static int goldfish_battery_get_property(struct power_supply *psy,
 			//cap, g_battery_percentage, g_battery_voltage,  g_battery_temperature,
 			//cur, g_charging_state, g_OCVstatus, g_initVoltage);
 			
-		printk(KERN_ERR "[May] User_P=%d, Gas_P=%d, Gas_MP=%d, SW_OCV_P=%d, SW_OCV_MP=%d, POCV_flag=%d\n",
-			g_battery_percentage, g_GasGauge_percentage, tempcap, g_SW_OCV_percentage, g_SW_OCV_ReMap_Percentage, g_POCV_flag);
-		printk(KERN_ERR "[May] Vol=%d, T=%d, cur=%d, charging state=%d, OCVstatus=%d, initVoltage=%d \n", 
-			g_battery_voltage,  g_battery_temperature, g_battery_current, g_charging_state, g_OCVstatus, g_initVoltage);
+		//printk(KERN_ERR "[May] User_P=%d, Gas_P=%d, Gas_MP=%d, SW_OCV_P=%d, SW_OCV_MP=%d, POCV_flag=%d\n",
+		//	g_battery_percentage, g_GasGauge_percentage, tempcap, g_SW_OCV_percentage, g_SW_OCV_ReMap_Percentage, g_POCV_flag);
+		//printk(KERN_ERR "[May] Vol=%d, T=%d, cur=%d, charging state=%d, OCVstatus=%d, initVoltage=%d \n", 
+		//	g_battery_voltage,  g_battery_temperature, g_battery_current, g_charging_state, g_OCVstatus, g_initVoltage);
 		
 		// Check battery full flag ++
        	if ((g_battery_percentage == 100)&&(g_charging_state == CHARGER_STATE_CHARGING))
@@ -1601,7 +1601,7 @@ static int goldfish_battery_get_property(struct power_supply *psy,
 		/* [FXX_CR], Add for dump GPIO OUT status*/
 		GPIO2_OUT_1 = readl(ioremap(0xA9300C00, 4096) + 0x0000);  //GPIO2_OUT_1
 		GPIO2_OE_1 = readl(ioremap(0xA9300C00, 4096) + 0x0008);  //GPIO2_OE_1
-		printk(KERN_INFO "POWER_SUPPLY_PROP_CAPACITY : GPIO2_OUT_1 = 0x%x, GPIO2_OE_1 = 0x%x\n", GPIO2_OUT_1, GPIO2_OE_1);
+		//printk(KERN_INFO "POWER_SUPPLY_PROP_CAPACITY : GPIO2_OUT_1 = 0x%x, GPIO2_OE_1 = 0x%x\n", GPIO2_OUT_1, GPIO2_OE_1);
 		/* FIH, Michael Kao, 2010/05/06{ */
              break;
 	default:

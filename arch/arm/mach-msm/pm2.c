@@ -1702,34 +1702,7 @@ static int msm_pm_enter(suspend_state_t state)
 #elif defined(CONFIG_MSM_MEMORY_LOW_POWER_MODE_SUSPEND_RETENTION)
 		sleep_limit |= SLEEP_RESOURCE_MEMORY_BIT0;
 #endif
-		//[+++]Add for fast dormancy
-		#ifdef CONFIG_FIH_FXX        
-		if(dorm_fifo==NULL)
-		{  
-			dorm_fifo = filp_open("/data/dorm_fifo", O_RDWR, 0);
-			dorm_input[0] = '1';
-			printk(KERN_INFO "%s(): Open dorm_fifo", __func__);
-			if(IS_ERR(dorm_fifo))
-			{
-				dorm_fifo = NULL;
-				printk(KERN_INFO "%s(): dorm_fifo doesn't exist\n", __func__);
-			}
-			else
-			{
-				printk(KERN_INFO "%s(): Ready to Enter Fast Dormancy: \n",__func__);
-				dorm_fifo->f_op->llseek(dorm_fifo,0 , 0 );
-				dorm_fifo->f_op->write(dorm_fifo, dorm_input, 1, &dorm_fifo->f_pos);
-			}
-		}
-		else
-		{
-			//Ready to enter fast dormancy
-			printk(KERN_INFO "%s(): Ready to Enter Fast Dormancy: \n",__func__);
-			dorm_fifo->f_op->llseek(dorm_fifo,0 , 0 );
-			dorm_fifo->f_op->write(dorm_fifo, dorm_input, 1, &dorm_fifo->f_pos);
-		}
-		#endif
-		//[---]Add for fast dormancy
+		
 
 		ret = msm_pm_power_collapse(
 			false, msm_pm_max_sleep_time, sleep_limit);
