@@ -46,12 +46,6 @@
 #endif
 /* } FIH, SimonSSChang, 2010/01/04 */
 
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-#ifdef CONFIG_FIH_FXX
-#include <mach/msm_smd.h>
-#endif
-/*} FIH, SimonSSChang, 2010/06/24 */
 
 
 #define A11S_CLK_CNTL_ADDR (MSM_CSR_BASE + 0x100)
@@ -130,14 +124,7 @@ static struct clock_state drv_state = { 0 };
 static struct clkctl_acpu_speed *acpu_freq_tbl;
 
 
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-#ifdef CONFIG_FIH_FXX
-static bool keep_axi = false;
-int g_acpuclock_hwid = 0;
-bool degrade_freq_flag = 0;
-#endif
-/*} FIH, SimonSSChang, 2010/06/24 */
+
 
 static void __init acpuclk_init(void);
 
@@ -519,21 +506,6 @@ static void acpuclk_set_div(const struct clkctl_acpu_speed *hunt_s) {
 	}
 }
 
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-#ifdef CONFIG_FIH_FXX
-void msm_fih_set_max_axi160(void)
-{
-	uint32_t oem_cmd = SMEM_PRPC_COMM_OEM_FIX_AXI_CLOCK;
-  	uint32_t smem_response = 0;	
-  	uint32_t oem_parameter = 3;
-    
-    msm_proc_comm_oem(PCOM_CUSTOMER_CMD1, &oem_cmd, &smem_response, &oem_parameter);
-    
-    set_ebi1_clk(160000*1000);
-}
-#endif
-/* }FIH, SimonSSChang, 2010/06/24 */
 
 int acpuclk_set_rate(int cpu, unsigned long rate, enum setrate_reason reason)
 {
@@ -682,22 +654,7 @@ int acpuclk_set_rate(int cpu, unsigned long rate, enum setrate_reason reason)
 			pr_warning("Setting AXI min rate failed (%d)\n", res);
 	}
 
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-#ifdef CONFIG_FIH_FXX
-    if(keep_axi == false) 
-    {
-        if(degrade_freq_flag)
-        {
-            pr_info("g_acpuclock_hwid = %d\n", g_acpuclock_hwid);
-            pr_info("config modem AXI max is 160MHz\n");
-            msm_fih_set_max_axi160();
-        }
-        
-        keep_axi = true;
-    }
-#endif
-/*} FIH, SimonSSChang, 2010/06/24 */
+
 
 	/* Nothing else to do for power collapse if not 7x27. */
 	if (reason == SETRATE_PC && !cpu_is_msm7x27())
@@ -943,17 +900,7 @@ static void __init precompute_stepping(void)
 	}
 }
 
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-#ifdef CONFIG_FIH_PROJECT_F0X
-static void __init freq_tbl_modify_by_hwid(void)
-{
-    pr_info("freq_tbl_modify_by_hwid()\n");
-    acpu_freq_tbl[8].use_for_scaling = 0;
-    acpu_freq_tbl[8].axiclk_khz = 160000;	
-}
-#endif
-/*} FIH, SimonSSChang, 2010/06/24 */
+
 
 static void __init print_acpu_freq_tbl(void)
 {
@@ -1027,46 +974,24 @@ static void shared_pll_control_init(void)
 void acpuclk_set_lcdcoff_wait_for_irq(int on)
 {
     int rc = 0;
-	
+
     mutex_lock(&drv_state.lock);
     if(on)
     {
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-        if(degrade_freq_flag)
-        {
-    	 	//panel status is on
-    		acpu_freq_tbl[0].axiclk_khz = 160000;
-    		acpu_freq_tbl[1].axiclk_khz = 160000;
-    		acpu_freq_tbl[2].axiclk_khz = 160000;
-    		acpu_freq_tbl[3].axiclk_khz = 160000;
-    		acpu_freq_tbl[4].axiclk_khz = 160000;
-    		acpu_freq_tbl[5].axiclk_khz = 160000;
-    		acpu_freq_tbl[6].axiclk_khz = 160000;		
-    		acpu_freq_tbl[7].axiclk_khz = 160000;
-    		acpu_freq_tbl[8].axiclk_khz = 160000;
+    	//panel status is on
+    	acpu_freq_tbl[0].axiclk_khz = 200000;
+    	acpu_freq_tbl[1].axiclk_khz = 200000;
+    	acpu_freq_tbl[2].axiclk_khz = 200000;
+    	acpu_freq_tbl[3].axiclk_khz = 200000;
+    	acpu_freq_tbl[4].axiclk_khz = 200000;
+    	acpu_freq_tbl[5].axiclk_khz = 200000;
+    	acpu_freq_tbl[6].axiclk_khz = 200000;
+    	acpu_freq_tbl[7].axiclk_khz = 200000;
+    	acpu_freq_tbl[8].axiclk_khz = 200000;
     		
-    		rc = ebi1_clk_set_min_rate(CLKVOTE_ACPUCLK,
-    						160000 * 1000);
-        }
-        else
-        {
-    	 	//panel status is on
-    		acpu_freq_tbl[0].axiclk_khz = 200000;
-    		acpu_freq_tbl[1].axiclk_khz = 200000;
-    		acpu_freq_tbl[2].axiclk_khz = 200000;
-    		acpu_freq_tbl[3].axiclk_khz = 200000;
-    		acpu_freq_tbl[4].axiclk_khz = 200000;
-    		acpu_freq_tbl[5].axiclk_khz = 200000;
-    		acpu_freq_tbl[6].axiclk_khz = 200000;		
-    		acpu_freq_tbl[7].axiclk_khz = 200000;
-    		acpu_freq_tbl[8].axiclk_khz = 200000;
-    		
-    		rc = ebi1_clk_set_min_rate(CLKVOTE_ACPUCLK,
+    	rc = ebi1_clk_set_min_rate(CLKVOTE_ACPUCLK,
     						200000 * 1000);
-        }
-/*} FIH, SimonSSChang, 2010/06/24 */
-		
+
 		if (rc < 0)
 			pr_err("Setting AXI min rate failed!\n");
     }
@@ -1081,34 +1006,18 @@ void acpuclk_set_lcdcoff_wait_for_irq(int on)
 		acpu_freq_tbl[5].axiclk_khz = 160000;
 		acpu_freq_tbl[6].axiclk_khz = 160000;		
 		acpu_freq_tbl[7].axiclk_khz = 160000;
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-        if(degrade_freq_flag)
-        {
-		    acpu_freq_tbl[8].axiclk_khz = 160000;
-          
-        }
-        else
-        {
-    		acpu_freq_tbl[8].axiclk_khz = 200000;
-        }
-/*} FIH, SimonSSChang, 2010/06/24 */
+		acpu_freq_tbl[8].axiclk_khz = 200000;
+   
     }
     mutex_unlock(&drv_state.lock);
 
 }
 #endif
 //[---][ChiaYuan]Make a AXI change decision for RGB panel depend on panel state
+
 void __init msm_acpu_clock_init(struct msm_acpu_clock_platform_data *clkdata)
 {
-	/* FIH, NeoChen, Check FUSE for adjusting AXI & ARM11 clock, 2010/09/16 { */
-#ifdef CONFIG_FIH_PROJECT_F0X
-	uint32_t smem_proc_comm_oem_cmd1 = PCOM_CUSTOMER_CMD1;
-	uint32_t smem_proc_comm_oem_data1 = SMEM_PRPC_COMM_OEM_FUSE_READ;
-  	uint32_t smem_proc_comm_oem_data2= 0;
-  	uint32_t fuse_value[32];
-#endif
-	/* } FIH, NeoChen, 2010/09/16 */
+
 
 	pr_info("acpu_clock_init()\n");
 
@@ -1125,82 +1034,6 @@ void __init msm_acpu_clock_init(struct msm_acpu_clock_platform_data *clkdata)
 		msm7x25_acpu_pll_hw_bug_fix();
 	acpuclk_init();
 	lpj_init();
-
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-#ifdef CONFIG_FIH_FXX
-    g_acpuclock_hwid = FIH_READ_ORIG_HWID_FROM_SMEM();
-    pr_info("g_acpuclock_hwid = %d\n", g_acpuclock_hwid);
-
-    /* need to do degrade freq model: 
-    CMCS_HW_EVB1
-    CMCS_ORIG_RTP_PR1,           //10k resister
-    CMCS_ORIG_CTP_PR1 = 0xd,     //20k resister
-
-    CMCS_850_RTP_PR2 = 0x10,     // 30k resister
-    CMCS_850_RTP_PR3,
-    CMCS_850_RTP_MP1,            //4.7k resister
-        
-    CMCS_900_RTP_PR2 = 0x20,     //51k resister
-    CMCS_900_RTP_PR3,
-    CMCS_900_RTP_MP1,            //60.4k resister
-
-    CMCS_850_CTP_PR2 = 0x17,     //68.1k resister
-    CMCS_850_CTP_PR3,
-
-    CMCS_900_CTP_PR2 = 0x27,     //90.9k resister
-    CMCS_900_CTP_PR3,
-
-    CMCS_145_CTP_PR1 = 0x2E,     //750k resister
-
-    CMCS_125_FST_PR1 = 0x30,     //220k resister
-    CMCS_125_FST_PR2,            //270k resister
-    CMCS_125_FST_MP1,            //390k resister
-
-    CMCS_CTP_F917_PR1 = 0x50,
-
-    CMCS_125_CTP_GRE_PR1 = 0x60, //160k resister 
-    */
-    
-    /* FIH, NeoCHChen, 2010/08/26 { */
-    /* If RAM is 2G, ACPU/AXI max. clock are 480/160 MHz; If RAM is 4G, ACPU/AXI max. clock are 600/200 MHz*/
-#ifdef CONFIG_FIH_PROJECT_F0X
-    pr_info("Reading RAM size.\n");
-    if(fih_read_dram_info_from_smem() == DRAM_4G_MAGIC)
-    {
-        pr_info("RAM is 4G\n");
-    }
-    else if(fih_read_dram_info_from_smem() == DRAM_2G_MAGIC)
-    {
-        /* FIH, NeoChen, FA3 series does not check FUSE and degrade CPU frequency, 2010/10/04 { */
-        if(g_acpuclock_hwid >= CMCS_7627_ORIG_EVB1 && g_acpuclock_hwid < 0x600)
-        {
-            pr_info("RAM is 2G. FA3 series not to degrade CPU frequency\n");
-        }
-        /* } FIH, NeoChen, 2010/10/04 */
-        else
-        {
-            /* FIH, NeoChen, Check FUSE for adjusting AXI & ARM11 clock, 2010/09/16 { */
-            pr_info("RAM is 2G. Reading QFUSE_smem\n");
-            msm_proc_comm_oem(smem_proc_comm_oem_cmd1, &smem_proc_comm_oem_data1, fuse_value, &smem_proc_comm_oem_data2);
-            if(fuse_value[0] == 0)
-            {
-                degrade_freq_flag = 1;
-                freq_tbl_modify_by_hwid();
-                pr_info("Device does not wirte FUSE, limit maximum ACPU clock on 480MHz\n");
-            }
-            /* } FIH, NeoChen, 2010/09/16 */
-        }
-    }
-    else
-    {
-        pr_info("unknown RAM size\n");
-    }
-#endif
-    /*} FIH, NeoCHChen, 2010/08/26 */
-    pr_info("degrade_freq_flag = %d\n", degrade_freq_flag);
-#endif
-/*} FIH, SimonSSChang, 2010/06/24 */
 
 	print_acpu_freq_tbl();
 	if (cpu_is_msm7x27())

@@ -38,14 +38,6 @@ static DECLARE_BITMAP(clock_map_enabled, NR_CLKS);
 static DEFINE_SPINLOCK(clock_map_lock);
 static struct notifier_block axi_freq_notifier_block;
 
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-#ifdef CONFIG_FIH_FXX
-extern bool degrade_freq_flag;
-#endif
-/*} FIH, SimonSSChang, 2010/06/24 */
-
-
 /*
  * Standard clock functions defined in include/linux/clk.h
  */
@@ -216,20 +208,6 @@ int ebi1_clk_set_min_rate(enum clkvote_client client, unsigned long rate)
 	return ret;
 }
 
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-void set_ebi1_clk(unsigned long rate)
-{
-	int ret = 0;
-
-	pr_info("set axi on %lu Hz\n", rate);
-	ret = clk_set_min_rate(ebi1_clk, rate);
-	if (ret < 0) {
-		pr_err("Setting EBI1 rate to %lu Hz failed!\n", rate);
-    }
-}
-/*} FIH, SimonSSChang, 2010/06/24 */
-
 static int axi_freq_notifier_handler(struct notifier_block *block,
 				unsigned long min_freq, void *v)
 {
@@ -237,21 +215,7 @@ static int axi_freq_notifier_handler(struct notifier_block *block,
 	if (min_freq != MSM_AXI_MAX_FREQ)
 		min_freq *= 1000;
 
-/* FIH, SimonSSChang, 2010/06/24 { */
-/*Keep axi bus on 160MHz */
-#ifdef CONFIG_FIH_FXX
-    //pr_info("before min_freq = %lu\n", min_freq);
-    //pr_info("degrade_freq_flag = %d\n", degrade_freq_flag);
-    if(degrade_freq_flag)
-    {        
-        if(min_freq > 160000000)
-        {
-            min_freq = 160000000;
-        }
-    }
-    //pr_info("after min_freq = %lu\n", min_freq);    
-#endif
-/*} FIH, SimonSSChang, 2010/06/24 */
+
 
 	/* On 7x30, ebi1_clk votes are dropped during power collapse, but
 	 * pbus_clk votes are not. Use pbus_clk to implicitly request ebi1
