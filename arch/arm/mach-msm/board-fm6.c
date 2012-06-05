@@ -958,7 +958,7 @@ static unsigned int ar6k_wifi_status(struct device *dev)
 	return wifi_power_on;
 }
 static struct mmc_platform_data ar6k_wifi_data = {
-	.ocr_mask	    = MMC_VDD_28_29,
+	.ocr_mask	    = MMC_VDD_20_21,
 	.translate_vdd	= msm_ar6k_sdcc_setup_power,
 	.mmc_bus_width  = MMC_CAP_4_BIT_DATA,
 	.status			= ar6k_wifi_status,
