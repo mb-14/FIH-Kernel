@@ -302,16 +302,6 @@ int lcd_bl_set_intensity(int level)
 }
 EXPORT_SYMBOL(lcd_bl_set_intensity);
 
-/* FIH, Henry Juang, 2009/11/20 ++*/
-/* [FXX_CR], Add for proximity driver to turn on/off BL and TP. */
-int Proximity_Flag_Set(int flag)
-{
-	printk(KERN_ERR "Terry @@ Max8831 : This should be kill!!\n");
-	//return gProximity_flag_On;
-	return 1;
-}
-EXPORT_SYMBOL(Proximity_Flag_Set);
-/* FIH, Henry Juang, 2009/11/20 --*/
 
 /***************max8831 backlight init***************/
 static int max8831_bl_init(void)

@@ -6,7 +6,7 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- *          CM3602_PR1_PS_GPIO_OUT
+ *          
  * Version 1.0 2009/05/18
  * -basic support:
  *                     
@@ -16,7 +16,7 @@
 #include <linux/platform_device.h>
 #include <linux/miscdevice.h>
 #include <linux/fs.h>
-
+#include <linux/wakelock.h>
 /* FIH, Henry Juang, 2009/11/20 ++*/
 /* [FXX_CR], Add for proximity driver to turn on/off BL and TP. */
 #include <linux/elan_i2c.h>
@@ -44,7 +44,6 @@
 
 // FIH;NicoleWeng;2010/6/01 { 
 //#define DISABLE_PROXIMITY //if not support PS, open this define (ex:FM6)
-#define FAST_DATA_PATH // if hal and framework has changed to support this, open this define (Tiger implement)
 // } FIH;NicoleWeng;2010/6/01 
 
 int g_activate;
@@ -95,47 +94,19 @@ EXPORT_SYMBOL(msm_cm3602_read_adc);
 static int cm3602_irq=-1;
 static int flag_cm3602_irq=0;
 static int isCM3602Suspend=0;
-#ifdef FAST_DATA_PATH
 
-#include <linux/moduleparam.h>
-
-static int set_fih_in_call(const char *val, struct kernel_param *kp)
-{
-	char *endp;
-	int  l;
-	int  rv = 0;
-
-	if (!val)
-		return -EINVAL;
-	l = simple_strtoul(val, &endp, 0);
-	if (endp == val)
-		return -EINVAL;
-
-	*((int *)kp->arg) = l;
-
-	if(l == 0) {
-		notify_from_proximity(0);
-	}
-
-	return rv;
-}
-
-static int fih_in_call = 0; 
-module_param_call(fih_in_call, set_fih_in_call, param_get_int, &fih_in_call, 0644);
-static char fih_proximity_level = -1;
-
-#else
 // FIH, Henry Juang, 2009/11/20 ++
 // [FXX_CR], Add for proximity driver to turn on/off BL and TP. 
 #include <linux/workqueue.h>
 extern int Q7x27_kybd_proximity_irqsetup(void);
-extern int Proximity_Flag_Set(int flag);
 struct workqueue_struct *proximity_wq;
 struct work_struct proximity_work;
 
+struct wake_lock resume_wakelock;
+
 static int touch_last_flag=1;
 
-static void proximaty_cb(struct work_struct *w){
+static void proximity_cb(struct work_struct *w){
 	int level;
 	
 	if (HWID == CMCS_HW_VER_EVB1)
@@ -149,61 +120,16 @@ static void proximaty_cb(struct work_struct *w){
 		level = gpio_get_value(CM3602_PR1_PS_GPIO_OUT);
 	}	
 	
-//#if 1
-	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: level=%d,touch_last_flag=%d.\n",level,touch_last_flag);
-	if(level==0 && touch_last_flag==1){
-	//Call Stanley
-		if(!Proximity_Flag_Set(1)){
-			fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: ALS notifies BL failed.\n");
-		}
-		if(!notify_from_proximity(1)){
-			fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: ALS notifies TP failed.\n");
-		}
-		fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: Turn off TP and BL.\n");
-	}
-
 	if(level==1 && touch_last_flag==0){
-	//Call Stanley
-		if(!Proximity_Flag_Set(0)){
-			fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: ALS notifies BL failed.\n");
-		}
-		if(!notify_from_proximity(0)){
-			fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: ALS notifies Touch panel failed.\n");
-		}
-//		Q7x27_kybd_hookswitch_irqsetup(0);
+
 		Q7x27_kybd_proximity_irqsetup();
-		fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: Turn on TP and BL.\n");
+		
 	}
 	touch_last_flag=level;
-//#endif
-
-	printk("proximaty_cb finish.\n");
 
 }
 // FIH, Henry Juang, 2009/11/20 --
 #endif
-#endif
-
-
-static int ALSPS_panic_handler(struct notifier_block *this,
-			       unsigned long event, void *unused)
-{
-	int level;
-	if (HWID == CMCS_HW_VER_EVB1)
-	{
-		gpio_direction_input(CM3602_EVB1_PS_GPIO_OUT);
-		level = gpio_get_value(CM3602_EVB1_PS_GPIO_OUT);
-	}
-	else
-	{
-		gpio_direction_input(CM3602_PR1_PS_GPIO_OUT);
-		level = gpio_get_value(CM3602_PR1_PS_GPIO_OUT);
-	}
-	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "CM3602 ALS=%d\n",msm_cm3602_read_adc());
-	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "CM3602 PS=%d\n",level);
-	return 0;
-}
-
 
 
 
@@ -216,13 +142,6 @@ static int cm3602_ioctl(struct inode *inode, struct file *file, unsigned int cmd
 	switch (cmd) {
 		case CM3602_PS_OFF: //For CM3602 proximity sensor switch off.
 #ifndef DISABLE_PROXIMITY 
-			/* FIH;Tiger;2010/4/10 { */
-		#ifdef FAST_DATA_PATH
-			fih_proximity_level = -1;	
-			/* fast data path */		
-			cm3602_pid = 0;			
-		#endif
-			/* } FIH;Tiger;2010/4/12 */
 			enablePS = 0;			
 			if(!enableALS) gpio_direction_output(CM3602_EN_GPIO,1);
 			gpio_direction_output(CM3602_PS_GPIO,1);
@@ -234,15 +153,6 @@ static int cm3602_ioctl(struct inode *inode, struct file *file, unsigned int cmd
 				flag_cm3602_irq=0;
 				fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "CM3602: disable_irq cm3602_irq=%d\n", cm3602_irq );
 			}
-		#ifndef FAST_DATA_PATH
-			if(!Proximity_Flag_Set(0)){
-				fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: ALS notifies BL failed.\n");
-			}
-			if(!notify_from_proximity(0)){
-				fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: ALS notifies Touch panel failed.\n");
-			}
-			fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0,"*******CM3602: Release commander to TP and BL.\n"); 
-		#endif
 #endif
 			return 0;			
 		case CM3602_PS_ON: //For CM3602 proximity sensor switch on.
@@ -250,15 +160,6 @@ static int cm3602_ioctl(struct inode *inode, struct file *file, unsigned int cmd
 			if ((HWID >= CMCS_RTP_PR2) && (HWID <= CMCS_RTP_MP3)){
 				return 0;			
 			}
-			
-			/* FIH;Tiger;2010/4/12 { */
-			/* fast data path */
-		#ifdef FAST_DATA_PATH
-			cm3602_task_struct = current;
-			cm3602_pid = current->pid;			
-			fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "CM3602: cm3602_pid: %d\n", cm3602_pid);
-		#endif
-			/* } FIH;Tiger;2010/4/12 */
 			enablePS = 1;
 			gpio_direction_output(CM3602_EN_GPIO,0);
 			gpio_direction_output(CM3602_PS_GPIO,0);
@@ -369,45 +270,7 @@ return 0;
 /* Enable Proximaty wake source.*/
 static irqreturn_t cm3602_isr( int irq, void * dev_id)
 {
-#ifdef FAST_DATA_PATH
-/* FIH;Tiger;2010/4/12 { */
-/* implement fast path for ALS/PS */	
-	
-	int level;
-	
-	if (HWID == CMCS_HW_VER_EVB1)
-	{
-		gpio_direction_input(CM3602_EVB1_PS_GPIO_OUT);
-		level = gpio_get_value(CM3602_EVB1_PS_GPIO_OUT);
-	}
-	else
-	{
-		gpio_direction_input(CM3602_PR1_PS_GPIO_OUT);
-		level = gpio_get_value(CM3602_PR1_PS_GPIO_OUT);
-	}
-	
-	fih_proximity_level = level;		
-	if(fih_in_call) {
-		if(fih_proximity_level == 1) {
-			notify_from_proximity(0);
-		}
-		else if(fih_proximity_level == 0) {
-			notify_from_proximity(1);
-		}
-	}
-	
-	
-	if(cm3602_pid) {
-		struct siginfo info;
-		info.si_signo = SIGUSR1;
-		info.si_code = (int)fih_proximity_level;
 
-		fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "Send PS signal to PID (%d)\n", cm3602_pid);		
-		send_sig_info(SIGUSR1, &info, cm3602_task_struct);
-	}
-	/* } FIH;Tiger;2010/4/12 */
-#else		
-	
 	/* FIH, Henry Juang, 2009/11/20 ++*/
 	/* [FXX_CR], Add for proximity driver to turn on/off BL and TP. */
 	if(!isFQC_Testing){
@@ -418,7 +281,6 @@ static irqreturn_t cm3602_isr( int irq, void * dev_id)
 	{
 		fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "cm3602_trigger but FQC testing. Does nothing.\n");
 	}
-#endif
 /* FIH, Henry Juang, 2009/11/20 --*/
 	return IRQ_HANDLED;
 }
@@ -436,7 +298,6 @@ static ssize_t cm3602_read_ps(struct file *file, char *buf, size_t count, loff_t
 	int level=1;
 	char *st;
 #ifndef DISABLE_PROXIMITY 
-#ifdef FAST_DATA_PATH
 	if(fih_proximity_level == (char)-1) {
 		if (HWID == CMCS_HW_VER_EVB1)
 		{
@@ -465,7 +326,6 @@ static ssize_t cm3602_read_ps(struct file *file, char *buf, size_t count, loff_t
 		gpio_direction_input(CM3602_PR1_PS_GPIO_OUT);
 		level = gpio_get_value(CM3602_PR1_PS_GPIO_OUT);
 	}
-#endif
 #endif
 	st=kmalloc(sizeof(char)*2,GFP_KERNEL);
 
@@ -559,44 +419,40 @@ static ssize_t cm3602_proc_write(struct file *filp, const char *buff, size_t len
 	return len;
 }
 
-static int __init sensor_probe(struct platform_device *pdev)
+static int __devinit sensor_probe(struct platform_device *pdev)
 {
 	int ret;	
 	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "cm3602 sensor_probe\n");
 #ifndef DISABLE_PROXIMITY
-#ifndef FAST_DATA_PATH
-//FIH, HenryJuang 2009/11/11 ++
-/* Enable Proximaty wake source.*/
 	proximity_wq = create_singlethread_workqueue("proximaty_work");
 	INIT_WORK(&proximity_work, proximaty_cb);
-//FIH, HenryJuang 2009/11/11 --
-#endif
 #endif
 	ret = misc_register(&cm3602_alsps_dev);
 	if (ret){
 		printk(KERN_WARNING "CM3602 ALSPS Unable to register misc device.\n");
 		return ret;
 	}
-	
+	wake_lock_init(&resume_wakelock, WAKE_LOCK_SUSPEND, "proxi_resume");
 	return 0;
 }
 static int sensor_remove(struct platform_device *pdev)
 {
-	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "cm3602 sensor_remove\n");
+	 wake_lock_destroy(&resume_wakelock);
 	return 0;
 }
 static int sensor_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "cm3602 sensor_suspend\n");
 #ifndef DISABLE_PROXIMITY
-//FIH, HenryJuang 2009/11/11 ++
-/* Enable Proximaty wake source.*/
-	if (!((HWID >= CMCS_RTP_PR2) && ((HWID <= CMCS_RTP_MP3)))){
-	if (HWID == CMCS_HW_VER_EVB1)
-		enable_irq_wake(MSM_GPIO_TO_INT(CM3602_EVB1_PS_GPIO_OUT));
-	else
-		enable_irq_wake(MSM_GPIO_TO_INT(CM3602_PR1_PS_GPIO_OUT));	
-	isCM3602Suspend=1;
+ //FIH, HenryJuang 2009/11/11 ++
+	
+ /* Enable Proximaty wake source.*/
+  if (enablePS && !((HWID >= CMCS_RTP_PR2) && ((HWID <= CMCS_RTP_MP3)))){
+   if (HWID == CMCS_HW_VER_EVB1)
+      enable_irq_wake(MSM_GPIO_TO_INT(CM3602_EVB1_PS_GPIO_OUT));
+    else
+      enable_irq_wake(MSM_GPIO_TO_INT(CM3602_PR1_PS_GPIO_OUT));  
+  isCM3602Suspend=1;
 	}
 	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "cm3602 sensor_suspend and enable_irq_wake.\n");
 //FIH, HenryJuang 2009/11/11 --
@@ -607,14 +463,15 @@ static int sensor_resume(struct platform_device *pdev)
 {
 	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "cm3602 sensor_resume\n");
 #ifndef DISABLE_PROXIMITY
-//FIH, HenryJuang 2009/11/11 ++
-/* Enable Proximaty wake source.*/
-	if (!((HWID >= CMCS_RTP_PR2) && ((HWID <= CMCS_RTP_MP3)))){
-	if (HWID == CMCS_HW_VER_EVB1)
-		disable_irq_wake(MSM_GPIO_TO_INT(CM3602_EVB1_PS_GPIO_OUT));
-	else
-		disable_irq_wake(MSM_GPIO_TO_INT(CM3602_PR1_PS_GPIO_OUT));		
-	isCM3602Suspend=0;		
+  //FIH, HenryJuang 2009/11/11 ++	
+  /* Enable Proximaty wake source.*/	
+  if (isCM3602Suspend && !((HWID >= CMCS_RTP_PR2) && ((HWID <= CMCS_RTP_MP3)))){
+    if (HWID == CMCS_HW_VER_EVB1)
+      disable_irq_wake(MSM_GPIO_TO_INT(CM3602_EVB1_PS_GPIO_OUT));
+    else
+      disable_irq_wake(MSM_GPIO_TO_INT(CM3602_PR1_PS_GPIO_OUT));    	
+    isCM3602Suspend=0;    
+    wake_lock_timeout(&resume_wakelock, 1 * HZ);
 	}	
 	fih_printk(cm3602_debug_mask, FIH_DEBUG_ZONE_G0, "cm3602 sensor_resume and disable_irq_wake.\n");	
 //FIH, HenryJuang 2009/11/11 --
@@ -736,7 +593,6 @@ static int __init cm3602_init(void)
 	else
 		gpio_direction_input(CM3602_PR1_PS_GPIO_OUT);
 #endif
-	atomic_notifier_chain_register(&panic_notifier_list, &trace_panic_notifier);
 	return 0;
 }
 
