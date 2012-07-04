@@ -642,7 +642,7 @@ static struct platform_device mtb_platform_device = {
 // +++ FIH, KarenLiao, 20090518: Add for headset detection.
 #ifdef CONFIG_FIH_FXX
 static struct gpio_switch_platform_data headset_sensor_device_data = {
-	.name = "headset_sensor",
+	.name = "h2w",
 	.gpio = 40,
 	.name_on = "",
 	.name_off = "",
@@ -2403,7 +2403,7 @@ static void __init msm7x2x_init_irq(void)
 
 static struct msm_acpu_clock_platform_data msm7x2x_clock_data = {
 	.acpu_switch_time_us = 50,
-	.max_speed_delta_khz = 256000,
+	.max_speed_delta_khz = 400000,
 	.vdd_switch_time_us = 62,
 	.max_axi_khz = 160000,
 };
