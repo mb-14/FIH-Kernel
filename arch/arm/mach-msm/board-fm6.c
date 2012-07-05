@@ -646,12 +646,8 @@ static struct gpio_switch_platform_data headset_sensor_device_data = {
 	.gpio = 40,
 	.name_on = "",
 	.name_off = "",
-	//+++ FIH, KarenLiao, @20090625: Modify kernel layer for headset low active detection mechanism.	
-	//.state_on = "1",
-	//.state_off = "0",
 	.state_on = "0",
 	.state_off = "1",
-	//--- FIH, KarenLiao, @20090625: Modify kernel layer for headset low active detection mechanism.
 };
 	
 static struct platform_device headset_sensor_device = {
@@ -2403,7 +2399,7 @@ static void __init msm7x2x_init_irq(void)
 
 static struct msm_acpu_clock_platform_data msm7x2x_clock_data = {
 	.acpu_switch_time_us = 50,
-	.max_speed_delta_khz = 400000,
+	.max_speed_delta_khz = 256000,
 	.vdd_switch_time_us = 62,
 	.max_axi_khz = 160000,
 };

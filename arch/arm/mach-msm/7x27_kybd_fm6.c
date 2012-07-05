@@ -4,6 +4,7 @@
 #include <linux/input.h>
 #include <linux/io.h>
 #include <linux/bootmem.h>
+#include <linux/slab.h>
 
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
@@ -27,7 +28,6 @@ to earlysuspend */
 #include "../../../kernel/power/power.h"
 #include <linux/suspend.h>
 #include "../../../include/linux/cmdbgapi.h"
-static uint32_t Q7x27_kybd_debug_mask = 0;
 bool b_EnableWakeKey = false;
 bool b_EnableIncomingCallWakeKey = false;
 
@@ -161,8 +161,7 @@ bool    hookswitchflag = true;
 /* power key support              */
 struct input_dev *fih_msm_keypad_get_input_dev(void)
 {	
-    //printk(KERN_INFO "fih_msm_keypad_get_input_dev: Pressed POWER_KEY\n");
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"fih_msm_keypad_get_input_dev: Pressed POWER_KEY\n");
+
 	return kpdev;
 }
 EXPORT_SYMBOL(fih_msm_keypad_get_input_dev);
@@ -173,8 +172,7 @@ EXPORT_SYMBOL(fih_msm_keypad_get_input_dev);
 #ifdef CONFIG_FIH_FXX
 bool key_wakeup_get(void)
 {
-    //printk(KERN_INFO "Simon: key_wakeup_get() return %d\n", b_EnableWakeKey);
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Simon: key_wakeup_get() return %d\n", b_EnableWakeKey);
+  
     return b_EnableWakeKey;
 }
 EXPORT_SYMBOL(key_wakeup_get);
@@ -184,15 +182,13 @@ int key_wakeup_set(int on)
     if(on)
     {
         b_EnableWakeKey = true;
-        //printk(KERN_INFO "Simon: key_wakeup_set() %d\n", b_EnableWakeKey);
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Simon: key_wakeup_set() %d\n", b_EnableWakeKey);
+     
         return 0;
     }
     else
     {
         b_EnableWakeKey = false;
-        //printk(KERN_INFO "Simon: key_wakeup_set() %d\n", b_EnableWakeKey);        
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Simon: key_wakeup_set() %d\n", b_EnableWakeKey);
+     
         return 0;
     }
 }    
@@ -205,8 +201,7 @@ EXPORT_SYMBOL(key_wakeup_set);
 #ifdef CONFIG_FIH_FXX
 bool incoming_call_get(void)
 {
-    //printk(KERN_INFO "Simon: incoming_call_get() return %d\n", b_EnableIncomingCallWakeKey);
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Simon: incoming_call_get() return %d\n", b_EnableIncomingCallWakeKey);
+ 
     return b_EnableIncomingCallWakeKey;
 }
 EXPORT_SYMBOL(incoming_call_get);
@@ -216,15 +211,13 @@ int incoming_call_set(int on)
     if(on)
     {
         b_EnableIncomingCallWakeKey = true;
-        //printk(KERN_INFO "Simon: incoming_call_set() %d\n", b_EnableIncomingCallWakeKey);
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Simon: incoming_call_set() %d\n", b_EnableIncomingCallWakeKey);
+    
         return 0;
     }
     else
     {
         b_EnableIncomingCallWakeKey = false;
-        //printk(KERN_INFO "Simon: incoming_call_set() %d\n", b_EnableIncomingCallWakeKey);        
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Simon: incoming_call_set() %d\n", b_EnableIncomingCallWakeKey);
+  
         return 0;
     }
 }    
@@ -235,8 +228,7 @@ static irqreturn_t Q7x27_kybd_irqhandler(int irq, void *dev_id)
 {
 	struct Q7x27_kybd_record *kbdrec = dev_id;
 
-    //printk(KERN_INFO "irqreturn_t Q7x27_kybd_irqhandler+, irq= %X \n", irq);
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"irqreturn_t Q7x27_kybd_irqhandler+, irq= %X\n", irq);
+    
 
     if (kbdrec->kybd_connected) {
 
@@ -271,20 +263,14 @@ static int Q7x27_kybd_irqsetup(struct Q7x27_kybd_record *kbdrec)
 			     (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING), 
 			     Q7x27_kybd_name, kbdrec);
 	if (rc < 0) {
-		//printk(KERN_ERR
-		//       "Could not register for  %s interrupt "
-		//       "(rc = %d)\n", Q7x27_kybd_name, rc);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Could not register for  %s interrupt(rc = %d)\n",Q7x27_kybd_name, rc);
+	
 		rc = -EIO;
 	}
 	rc = request_irq(MSM_GPIO_TO_INT(kbdrec->voldn_pin), &Q7x27_kybd_irqhandler,
 			     (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING), 
 			     Q7x27_kybd_name, kbdrec);
 	if (rc < 0) {
-		//printk(KERN_ERR
-		//       "Could not register for  %s interrupt "
-		//       "(rc = %d)\n", Q7x27_kybd_name, rc);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Could not register for  %s interrupt(rc = %d)\n",Q7x27_kybd_name, rc);
+	
 		rc = -EIO;
 	}
 #endif
@@ -305,8 +291,7 @@ int Q7x27_kybd_hookswitch_irqsetup(bool activate_irq)
 	suspend_state_t SuspendState = PM_SUSPEND_ON;//FIH, KarenLiao, @20090731: [F0X.FC-41]: The action of Inserting headset is the wake up action.
 
 	
-    //printk(KERN_INFO "Q7x27_kybd_hookswitch_irqsetup \n"); 
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Q7x27_kybd_hookswitch_irqsetup\n");
+    
 
 //+++ FIH, KarenLiao, @20090731: [F0X.FC-41]: The action of Inserting headset is the wake up action.
 	SuspendState = get_suspend_state();
@@ -315,12 +300,10 @@ int Q7x27_kybd_hookswitch_irqsetup(bool activate_irq)
 		if(kpdev)
 		{
 			input_report_key(kpdev, KEY_RINGSWITCH, KBD_IN_KEYPRESS);
-			//printk(KERN_INFO "FIH: keypress KEY_RINGSWITCH = %d\n", KEY_LEFTSHIFT);
-			fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keypress KEY_RINGSWITCH = %d\n",KEY_LEFTSHIFT);
+		
 			
 			input_report_key(kpdev, KEY_RINGSWITCH, KBD_IN_KEYRELEASE);
-			//printk(KERN_INFO "FIH: keyrelease KEY_RINGSWITCH = %d\n", KEY_LEFTSHIFT);
-			fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keyrelease KEY_RINGSWITCH = %d\n",KEY_LEFTSHIFT);
+		
 			input_sync(kpdev);
 		}
 	}
@@ -332,8 +315,7 @@ int Q7x27_kybd_hookswitch_irqsetup(bool activate_irq)
 /* clear pending interrupt        */
         gpio_clear_detect_status(rd->hook_sw_pin);
    	    hook_sw_val = (bool)gpio_get_value(rd->hook_sw_pin);
-  	    //printk(KERN_INFO "Read back hook switch eky <%d>\n", hook_sw_val);
-  	    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Read back hook switch key <%d>\n", hook_sw_val);
+  	 
         mdelay(250);
 /* } FIH, PeterKCTseng, @20090603 */
 
@@ -341,21 +323,16 @@ int Q7x27_kybd_hookswitch_irqsetup(bool activate_irq)
 			        (IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING), 
 			        Q7x27_kybd_name, rd);
 	    if (rc < 0) {
-    		//printk(KERN_ERR
-		    //    "Could not register for  %s interrupt "
-		    //    "(rc = %d)\n", Q7x27_kybd_name, rc);
-		    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Could not register for  %s interrupt(rc = %d) \n",Q7x27_kybd_name, rc);
+    	
 		    rc = -EIO;
 	    }
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Hook Switch IRQ Enable!\n");
-        //printk(KERN_INFO "Hook Switch IRQ Enable! \n");
+
 		rd->bHookSWIRQEnabled = true;
 	} else {
 		if (rd->bHookSWIRQEnabled)  {
-			//printk(KERN_INFO "Free IRQ\n");
+			
     		free_irq(MSM_GPIO_TO_INT(rd->hook_sw_pin), rd);
-             fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Hook Switch IRQ disable\n");
-            //printk(KERN_INFO "Hook Switch IRQ disable! \n");
+      
 			rd->bHookSWIRQEnabled = false;
 		}
 	}
@@ -405,16 +382,12 @@ static int Q7x27_kybd_config_gpio(struct Q7x27_kybd_record *kbrec)
 #if VOLUME_KEY_ENABLE // Peter, Debug
 	rc = gpio_request(kbd_volup_pin, "gpio_keybd_volup");
 	if (rc) {
-		//printk(KERN_ERR "gpio_request failed on pin %d (rc=%d)\n",
-		//	kbd_volup_pin, rc);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"gpio_request failed on pin %d (rc=%d)\n",kbd_volup_pin, rc);
+	
 		goto err_gpioconfig;
 	}
 	rc = gpio_request(kbd_voldn_pin, "gpio_keybd_voldn");
 	if (rc) {
-		//printk(KERN_ERR "gpio_request failed on pin %d (rc=%d)\n",
-		//	kbd_voldn_pin, rc);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"gpio_request failed on pin %d (rc=%d)\n",kbd_voldn_pin, rc);
+	
 		goto err_gpioconfig;
 	}
 #endif
@@ -423,9 +396,7 @@ static int Q7x27_kybd_config_gpio(struct Q7x27_kybd_record *kbrec)
 #if SWITCH_KEY_ENABLE // Peter, Debug
 	rc = gpio_request(kbd_hook_sw_pin, "gpio_hook_sw");
 	if (rc) {
-		//printk(KERN_ERR "gpio_request failed on pin %d (rc=%d)\n",
-		//	kbd_hook_sw_pin, rc);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"gpio_request failed on pin %d (rc=%d)\n",kbd_hook_sw_pin, rc);
+		
 		goto err_gpioconfig;
 	}
 #endif
@@ -433,16 +404,12 @@ static int Q7x27_kybd_config_gpio(struct Q7x27_kybd_record *kbrec)
 #if VOLUME_KEY_ENABLE // Peter, Debug
 	rc = gpio_direction_input(kbd_volup_pin);
 	if (rc) {
-		//printk(KERN_ERR "gpio_direction_input failed on "
-		//       "pin %d (rc=%d)\n", kbd_volup_pin, rc);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"gpio_direction_input failed on pin %d (rc=%d)\n",kbd_volup_pin, rc);
+	
 		goto err_gpioconfig;
 	}
 	rc = gpio_direction_input(kbd_voldn_pin);
 	if (rc) {
-		//printk(KERN_ERR "gpio_direction_input failed on "
-		//       "pin %d (rc=%d)\n", kbd_voldn_pin, rc);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"gpio_direction_input failed on pin %d (rc=%d)\n",kbd_voldn_pin, rc);
+	
 		goto err_gpioconfig;
 	}
 #endif
@@ -451,9 +418,7 @@ static int Q7x27_kybd_config_gpio(struct Q7x27_kybd_record *kbrec)
 #if SWITCH_KEY_ENABLE // Peter, Debug
 	rc = gpio_direction_input(kbd_hook_sw_pin);
 	if (rc) {
-		//printk(KERN_ERR "gpio_direction_input failed on "
-		//       "pin %d (rc=%d)\n", kbd_hook_sw_pin, rc);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"gpio_direction_input failed on pin %d (rc=%d)\n",kbd_hook_sw_pin, rc);
+	
 		goto err_gpioconfig;
 	}
 #endif
@@ -484,8 +449,6 @@ static void Q7x27_kybd_volkey1(struct work_struct *work)
 	bool state;
 #endif
 /* } FIH, PeterKCTseng, @20090520 */
-     fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"[Misty]VOL UP <%d>\n", volup_val);
-	//printk(KERN_INFO "VOL UP <%d>\n", volup_val);
 
 	disable_irq(MSM_GPIO_TO_INT(kbdrec->volup_pin));
 //+++++++++++++++++++++++++++++++FIH_F0X_misty
@@ -497,11 +460,9 @@ static void Q7x27_kybd_volkey1(struct work_struct *work)
             if(idev)
             {
             	input_report_key(idev, KEY_VOLUMEUP, KBD_IN_KEYPRESS);
-            		//printk(KERN_INFO "FIH: keypress KEY_VOLUMEUP\n");
-            		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keypress KEY_VOLUMEUP\n");
+       
             	input_report_key(idev, KEY_VOLUMEUP, KBD_IN_KEYRELEASE);
-            		//printk(KERN_INFO "FIH: keyrelease KEY_VOLUMEUP\n");
-            		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keyrelease KEY_VOLUMEUP\n");
+
             	input_sync(idev);
             }
         }
@@ -519,8 +480,7 @@ static void Q7x27_kybd_volkey1(struct work_struct *work)
             {
             	if (state) {
             		input_report_key(idev, KEY_VOLUMEUP, KBD_IN_KEYPRESS);
-            		//printk(KERN_INFO "FIH: keypress KEY_VOLUMEUP\n");
-            		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keypress KEY_VOLUMEUP\n");
+            
         // FIH, WillChen, 2009/08/14 ++
         //Press VolumeUp+VolumeDown+End key to force panic and dump log
         #ifdef CONFIG_FIH_FXX_FORCEPANIC
@@ -537,9 +497,7 @@ static void Q7x27_kybd_volkey1(struct work_struct *work)
         // FIH, WillChen, 2009/08/14 --
             	} else {
             		input_report_key(idev, KEY_VOLUMEUP, KBD_IN_KEYRELEASE);
-            		//printk(KERN_INFO "FIH: keyrelease KEY_VOLUMEUP\n");		
-            		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keyrelease KEY_VOLUMEUP\n");
-            		debounceDelay = true;
+          	debounceDelay = true;
         // FIH, WillChen, 2009/08/14 ++
         //Press VolumeUp+VolumeDown+End key to force panic and dump log
         #ifdef CONFIG_FIH_FXX_FORCEPANIC
@@ -575,9 +533,7 @@ static void Q7x27_kybd_volkey2(struct work_struct *work)
 #if ACTIVE_MODE_ENABLE // Peter, Debug
 	bool state;
 #endif
-/* } FIH, PeterKCTseng, @20090520 */
-    //fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"[Misty]VOL DN <%d>\n", voldn_val);
-	//printk(KERN_INFO "VOL DN <%d>\n", voldn_val);
+
 
 	disable_irq(MSM_GPIO_TO_INT(kbdrec->voldn_pin));
 //+++++++++++++++++++++++++++++++FIH_F0X_misty
@@ -589,11 +545,9 @@ static void Q7x27_kybd_volkey2(struct work_struct *work)
             if(idev)
             {
             	input_report_key(idev, KEY_VOLUMEDOWN, KBD_IN_KEYPRESS);
-            		//printk(KERN_INFO "FIH: keypress KEY_VOLUMEDOWN\n");
-            		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keypress KEY_VOLUMEDOWNP\n");
+            	
             	input_report_key(idev, KEY_VOLUMEDOWN, KBD_IN_KEYRELEASE);
-            		//printk(KERN_INFO "FIH: keyrelease KEY_VOLUMEDOWN\n");
-            		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keyrelease KEY_VOLUMEDOWN\n");
+     
             	input_sync(idev);
             }
         }
@@ -611,8 +565,7 @@ static void Q7x27_kybd_volkey2(struct work_struct *work)
             {
             	if (state) {
             		input_report_key(idev, KEY_VOLUMEDOWN, KBD_IN_KEYPRESS);
-            		//printk(KERN_INFO "FIH: keypress KEY_VOLUMEDOWN\n");
-            		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keypress KEY_VOLUMEDOWN\n");
+            
         // FIH, WillChen, 2009/08/14 ++
         //Press VolumeUp+VolumeDown+End key to force panic and dump log
         #ifdef CONFIG_FIH_FXX_FORCEPANIC
@@ -629,8 +582,7 @@ static void Q7x27_kybd_volkey2(struct work_struct *work)
         // FIH, WillChen, 2009/08/14 --
             	} else {
             		input_report_key(idev, KEY_VOLUMEDOWN, KBD_IN_KEYRELEASE);
-            		//printk(KERN_INFO "FIH: keyrelease KEY_VOLUMEDOWN\n");		
-            		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keyrelease KEY_VOLUMEDOWN\n");
+    
             		debounceDelay = true;
         // FIH, WillChen, 2009/08/14 ++
         //Press VolumeUp+VolumeDown+End key to force panic and dump log
@@ -641,8 +593,7 @@ static void Q7x27_kybd_volkey2(struct work_struct *work)
             	}
             
             	input_sync(idev);
-            			//printk(KERN_INFO "FIH: keypress KEY_VOLUMEDOWN\n");	
-            			fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keypress KEY_VOLUMEDOWN\n");
+       
             }	
         
         	if (debounceDelay) {
@@ -687,12 +638,10 @@ static void Q7x27_hook_switchkey(struct work_struct *work)
 	    {
 	    	if (state) {
 	    		input_report_key(idev, KEY_HEADSETHOOK, KBD_IN_KEYPRESS); //report KEY_HEADSETHOOK pressing
-	    		//printk(KERN_INFO "FIH: keypress KEY_HEADSETHOOK= %d\n", KEY_HEADSETHOOK);
-	    		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keypress KEY_HEADSETHOOK= %d\n", KEY_HEADSETHOOK);
+
 	    	} else {
 	    		input_report_key(idev, KEY_HEADSETHOOK, KBD_IN_KEYRELEASE); //report KEY_HEADSETHOOK releasing
-	    		//printk(KERN_INFO "FIH: keyrelease KEY_HEADSETHOOK= %d\n", KEY_HEADSETHOOK);
-	    		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: keyrelease KEY_HEADSETHOOK= %d\n", KEY_HEADSETHOOK);
+
 	    		debounceDelay = true;
 	    	}
 	    
@@ -792,9 +741,7 @@ static struct input_dev *create_inputdev_instance(struct Q7x27_kybd_record *kbdr
 		input_set_drvdata(idev, kbdrec);
 		kpdev = idev;
 	} else {
-		//printk(KERN_ERR "Failed to allocate input device for %s\n",
-		//	Q7x27_kybd_name);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Failed to allocate input device for %s\n",Q7x27_kybd_name);
+		
 	}
 	
 	return idev;
@@ -808,9 +755,7 @@ static void Q7x27_kybd_connect2inputsys(struct work_struct *work)
 	kbdrec->Q7x27_kybd_idev = create_inputdev_instance(kbdrec);
 	if (kbdrec->Q7x27_kybd_idev) {
 		if (input_register_device(kbdrec->Q7x27_kybd_idev) != 0) {
-			//printk(KERN_ERR "Failed to register with"
-			//	" input system\n");
-			fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Failed to register with input system\n");
+	
 			input_free_device(kbdrec->Q7x27_kybd_idev);
 		}
 	}
@@ -832,8 +777,7 @@ to earlysuspend */
 #ifdef CONFIG_HAS_EARLYSUSPEND
 void Q7x27_kybd_early_suspend(struct early_suspend *h)
 {
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Q7x27_kybd_early_suspend()(%d)\n",rd->kybd_connected);
- //printk(KERN_INFO "Q7x27_kybd_early_suspend()(%d)\n",rd->kybd_connected);
+  
  if(SetupKeyFail)
  {
      SetupKeyFail=false;
@@ -846,13 +790,11 @@ void Q7x27_kybd_early_suspend(struct early_suspend *h)
       if(device_may_wakeup(&rd->pdev->dev)) 
       {
                 
-        //printk(KERN_INFO "enable VolUp   wakeup pin: %d\n", rd->volup_pin);
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"enable VolUp wakeup pin: %d\n", rd->volup_pin);      
+    
         enable_irq_wake(MSM_GPIO_TO_INT(rd->volup_pin));
         b_VolUp_EnableWakeIrq = true;
 
-        //printk(KERN_INFO "enable VolDown   wakeup pin: %d\n", rd->voldn_pin); 
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"enable VolDown wakeup pin: %d\n", rd->voldn_pin);      
+        
         enable_irq_wake(MSM_GPIO_TO_INT(rd->voldn_pin));
         b_VolDown_EnableWakeIrq = true;
       }
@@ -862,7 +804,7 @@ void Q7x27_kybd_early_suspend(struct early_suspend *h)
  if((b_EnableIncomingCallWakeKey ==true) && (rd->bHookSWIRQEnabled == true) && device_may_wakeup(&rd->pdev->dev) )
  {
      printk(KERN_INFO "enable Hook Key   wakeup pin: %d\n", rd->hook_sw_pin);
-     fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"enable Hook Key   wakeup pin: %d\n",rd->hook_sw_pin);
+ 
      enable_irq_wake(MSM_GPIO_TO_INT(rd->hook_sw_pin));
      b_HookKey_EnableWakeIrq = true;
  }
@@ -871,9 +813,7 @@ void Q7x27_kybd_early_suspend(struct early_suspend *h)
 }
 void Q7x27_kybd_late_resume(struct early_suspend *h)
 {
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Q7x27_kybd_late_resume()(%d)\n",rd->kybd_connected);
- //printk(KERN_INFO "Q7x27_kybd_late_resume()(%d)\n",rd->kybd_connected);
-// printk(KERN_ERR "%s""#######################g_center_pin:%d \n", __func__,g_center_pin);
+ 
   if(SetupKeyFail)
  {
      SetupKeyFail=false;
@@ -884,16 +824,14 @@ void Q7x27_kybd_late_resume(struct early_suspend *h)
 
    if(b_VolUp_EnableWakeIrq)
    {
-     //printk(KERN_INFO "disable VolUp   wakeup pin: %d\n", rd->volup_pin);
-     fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"disable VolUp   wakeup pin: %d\n", rd->volup_pin);
+  
 	 disable_irq_wake(MSM_GPIO_TO_INT(rd->volup_pin));
      b_VolUp_EnableWakeIrq = false;     
    }
 
    if(b_VolDown_EnableWakeIrq)
    {
-     //printk(KERN_INFO "disable VolDown   wakeup pin: %d\n", rd->voldn_pin);
-     fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"disable VolDown   wakeup pin: %d\n", rd->voldn_pin);
+   
 	 disable_irq_wake(MSM_GPIO_TO_INT(rd->voldn_pin));
      b_VolDown_EnableWakeIrq = false;     
    }
@@ -901,7 +839,7 @@ void Q7x27_kybd_late_resume(struct early_suspend *h)
    if(b_HookKey_EnableWakeIrq == true)
    {
      printk(KERN_INFO "disable HookKey   wakeup pin: %d\n", rd->hook_sw_pin);
-     fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"disable HookKey   wakeup pin: %d\n", rd->hook_sw_pin);
+   
 	 disable_irq_wake(MSM_GPIO_TO_INT(rd->hook_sw_pin));
      b_HookKey_EnableWakeIrq = false;
    }
@@ -915,24 +853,19 @@ void Q7x27_kybd_late_resume(struct early_suspend *h)
 
 static int Q7x27_kybd_remove(struct platform_device *pdev)
 {
-	//printk(KERN_INFO "removing keyboard driver\n");
-	fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"removing keyboard driver\n");
 
 /* FIH, SimonSSChang, 2009/09/04 { */
 /* [FXX_CR], change keypad suspend/resume function
 to earlysuspend */
 #ifdef CONFIG_FIH_FXX
 #ifdef CONFIG_HAS_EARLYSUSPEND
-    //printk(KERN_INFO "Keypad unregister_early_suspend()\n");
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Keypad unregister_early_suspend()\n");
 	unregister_early_suspend(&rd->Q7x27_kybd_early_suspend_desc);
 #endif
 #endif
 /* } FIH, SimonSSChang, 2009/09/04 */
 
 	if (rd->Q7x27_kybd_idev) {
-		//printk(KERN_INFO "deregister from input system\n");
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"deregister from input system\n");
+
 		input_unregister_device(rd->Q7x27_kybd_idev);
 		rd->Q7x27_kybd_idev = NULL;
 	}
@@ -986,13 +919,10 @@ static int Q7x27_kybd_probe(struct platform_device *pdev)
 #endif
 /* } FIH, PeterKCTseng, @20090520 */
 
-    //FIH_debug_log
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Q7x27_kybd_probe\n");
-    //printk(KERN_INFO "FIH: enter Q7x27_kybd_probe()\n");
+  
 	rd = kzalloc(sizeof(struct Q7x27_kybd_record), GFP_KERNEL);
 	if (!rd) {
-		//printk(KERN_ERR "i2ckybd_record memory allocation failed!!\n");
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"kybd_record memory allocation failed!!\n");
+		
 		return rc;
 	}
 
@@ -1007,8 +937,7 @@ static int Q7x27_kybd_probe(struct platform_device *pdev)
 #if ACTIVE_MODE_ENABLE // Peter, Debug
     
      if (g_HWID >= CMCS_RTP_PR1) {
-		//printk(KERN_ERR "FIH: CMCS_RTP_PR1, g_HWID= %d \n", g_HWID);
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: CMCS_RTP_PR1, g_HWID= %d\n", g_HWID);
+	
         rd->active.volup_pin_actype     = ACTIVE_HIGH;
         rd->active.voldn_pin_actype     = ACTIVE_HIGH;
         rd->active.hook_sw_pin_actype   = ACTIVE_LOW;
@@ -1016,8 +945,7 @@ static int Q7x27_kybd_probe(struct platform_device *pdev)
     }          
     else {
         // target board undefined 
-		//printk(KERN_ERR "target borad can not be recognized!! \n");
-		fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"target borad can not be recognized!!\n");
+	
 
     }  
 #endif
@@ -1089,8 +1017,6 @@ to earlysuspend */
     rd->Q7x27_kybd_early_suspend_desc.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN - 10;
 	rd->Q7x27_kybd_early_suspend_desc.suspend = Q7x27_kybd_early_suspend;
 	rd->Q7x27_kybd_early_suspend_desc.resume = Q7x27_kybd_late_resume;
-    //printk(KERN_INFO "Keypad register_early_suspend()\n");
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"Keypad register_early_suspend()\n");
 	register_early_suspend(&rd->Q7x27_kybd_early_suspend_desc);
     rd->pdev = pdev;
 #endif
@@ -1134,7 +1060,7 @@ to earlysuspend */
  failexit1:
     //FIH_debug_log
     //printk(KERN_INFO "FIH: error out failexit1\n");
-    fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"FIH: error out failexit1\n");
+   
 	Q7x27_kybd_release_gpio(rd);
 	kfree(rd);
 
@@ -1189,16 +1115,13 @@ void KeySetup(void)
      int count1=0;
 retry1:
         rc = Q7x27_kybd_irqsetup(rd);
-        //printk(KERN_INFO "KeySetup/Q7x27_kybd_irqsetup\n");   
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"KeySetup/Q7x27_kybd_irqsetup\n");     
+     
         if (rc)
         {
             goto retry1;
             count++;    
             if(count > 6)
-            {
-                //printk(KERN_INFO "retry FAIL======>Q7x27_kybd_irqsetup\n"); 
-                fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"retry FAIL======>Q7x27_kybd_irqsetup\n");     
+            {    
                 count=0;
 	            SetupKeyFail=true;
                 goto failexit2;
@@ -1206,8 +1129,7 @@ retry1:
         }
 retry2: 
         rc = testfor_keybd();
-        //printk(KERN_INFO "KeySetup/testfor_keybd\n");  
-         fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"KeySetup/testfor_keybd\n");  
+     
         if (rc)
         {
             goto retry2;
@@ -1215,8 +1137,7 @@ retry2:
             if(count1 > 6)
             {
                 count1=0;
-                //printk(KERN_INFO "retry FAIL======>testfor_keybd\n");  
-                 fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"retry FAIL======>testfor_keybd\n");
+             
 		        SetupKeyFail=true;
                 goto failexit2;
             }
@@ -1244,14 +1165,11 @@ static int Q7x27_kybd_param_set(const char *val, struct kernel_param *kp)
     if(!EnableKeyInt)
     {
         ret = param_set_bool(val, kp);
-        //printk(KERN_ERR "%s: EnableKeyInt= %d\n", __func__, EnableKeyInt); 
-        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"%s: EnableKeyInt= %d\n", __func__, EnableKeyInt);
+
         
         if(ret)
         {
-            //printk(KERN_ERR "%s param set bool failed (%d)\n",
-            //			__func__, ret);    
-            fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"%s param set bool failed (%d)\n",__func__, ret);
+   
     	    EnableKeyInt = 1;
     	}
 	/* FIH, Debbie, 2010/01/05 { */
@@ -1260,7 +1178,7 @@ static int Q7x27_kybd_param_set(const char *val, struct kernel_param *kp)
 	{
            if(fih_read_kpd_from_smem())
     	    {
-    	        fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"enter recovery mode and set EnableKeyInt = 1\n");
+    	    
     	        EnableKeyInt = 1;
     	    }
 	}
@@ -1268,17 +1186,13 @@ static int Q7x27_kybd_param_set(const char *val, struct kernel_param *kp)
     	return 0;
     }
     else
-    {
-        //printk(KERN_ERR "has alreay set EnableKeyInt\n"); 
-       // fih_printk(Q7x27_kybd_debug_mask, FIH_DEBUG_ZONE_G0,"has alreay set EnableKeyInt\n"); 
+    { 
         return 0;    
     }
 
 }
 module_param_call(EnableKeyIntrrupt, Q7x27_kybd_param_set, param_get_int,
 		  &EnableKeyInt, S_IWUSR | S_IRUGO);
-module_param_named(debug_mask, Q7x27_kybd_debug_mask, uint, 0644);
-//---FIH_misty enable keypad interrupt until boot complete
 module_init(Q7x27_kybd_init);
 module_exit(Q7x27_kybd_exit);
 MODULE_VERSION("1.0");
