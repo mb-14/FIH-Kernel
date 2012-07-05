@@ -15,6 +15,7 @@
  * along with this program; if not, you can find it at http://www.fsf.org.
  */
 
+#include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
@@ -52,9 +53,18 @@
 #define HS_HEADSET_SWITCH_K	0x84
 #define HS_HEADSET_SWITCH_2_K	0xF0
 #define HS_HEADSET_SWITCH_3_K	0xF1
+#define HS_HEADSET_HEADPHONE_K	0xF6
+#define HS_HEADSET_MICROPHONE_K 0xF7
 #define HS_REL_K		0xFF	/* key release */
 
+#define SW_HEADPHONE_INSERT_W_MIC 1 /* HS with mic */
+
 #define KEY(hs_key, input_key) ((hs_key << 24) | input_key)
+
+#if defined(CONFIG_SWITCH_GPIO) && defined(CONFIG_FIH_FXX)
+#define EXTERNAL_SWITCH_DEV
+#endif
+
 
 enum hs_event {
 	HS_EVNT_EXT_PWR = 0,	/* External Power status        */
@@ -188,7 +198,9 @@ static const uint32_t hs_key_map[] = {
 	KEY(HS_PWR_K, KEY_POWER),
 	KEY(HS_END_K, KEY_POWER),
 /* } FIH, PeterKCTseng, @20090526 */
-	KEY(HS_STEREO_HEADSET_K, SW_HEADPHONE_INSERT),
+	KEY(HS_STEREO_HEADSET_K, SW_HEADPHONE_INSERT_W_MIC),
+	KEY(HS_HEADSET_HEADPHONE_K, SW_HEADPHONE_INSERT),
+	KEY(HS_HEADSET_MICROPHONE_K, SW_MICROPHONE_INSERT),
 	KEY(HS_HEADSET_SWITCH_K, KEY_MEDIA),
 	KEY(HS_HEADSET_SWITCH_2_K, KEY_VOLUMEUP),
 	KEY(HS_HEADSET_SWITCH_3_K, KEY_VOLUMEDOWN),
@@ -220,6 +232,7 @@ struct msm_handset {
 	struct input_dev *ipdev;
 	struct switch_dev sdev;
 	struct msm_handset_platform_data *hs_pdata;
+	bool mic_on, hs_on;
 };
 
 static struct input_dev *kpdev;
@@ -251,13 +264,22 @@ static int hs_find_key(uint32_t hscode)
 	return -1;
 }
 
-static void
-report_headset_switch(struct input_dev *dev, int key, int value)
+static void update_state(void)
 {
-	struct msm_handset *hs = input_get_drvdata(dev);
+#ifndef EXTERNAL_SWITCH_DEV
+	int state;
 
-	input_report_switch(dev, key, value);
-	switch_set_state(&hs->sdev, value);
+	if (hs->mic_on && hs->hs_on)
+		state = 1 << 0;
+	else if (hs->hs_on)
+		state = 1 << 1;
+	else if (hs->mic_on)
+		state = 1 << 2;
+	else
+		state = 0;
+
+	switch_set_state(&hs->sdev, state);
+#endif
 }
 
 /*
@@ -290,16 +312,16 @@ static void report_hs_key(uint32_t key_code, uint32_t key_parm)
 	case KEY_END:
 /* FIH, PeterKCTseng, @20090526 { */
 /* power key support              */
-//	KEY(HS_PWR_K, KEY_POWER),
-//	KEY(HS_END_K, KEY_END),
-	kpdev = fih_msm_keypad_get_input_dev();
+//     KEY(HS_PWR_K, KEY_POWER),
+//     KEY(HS_END_K, KEY_END),
+       kpdev = fih_msm_keypad_get_input_dev();
 /* } FIH, PeterKCTseng, @20090526 */
 
-		if (!kpdev) {
-			printk(KERN_ERR "%s: No input device for reporting "
-					"pwr/end key press\n", __func__);
-			return;
-		}
+               if (!kpdev) {
+                       printk(KERN_ERR "%s: No input device for reporting "
+                                       "pwr/end key press\n", __func__);
+                       return;
+               }
         /* FIH, ChandlerKang, 2009/7/28, debounce key_power { */
         if(key==KEY_POWER && key_code != HS_REL_K){        
             time_now_key=jiffies;            
@@ -319,25 +341,40 @@ static void report_hs_key(uint32_t key_code, uint32_t key_parm)
             return;
         }
         /* FIH, ChandlerKang, 2009/7/28, debounce key_power } */        
-		input_report_key(kpdev, key, (key_code != HS_REL_K));
-		input_sync(kpdev);
-		break;
+               input_report_key(kpdev, key, (key_code != HS_REL_K));
+               input_sync(kpdev);
+               break;
 	case KEY_MEDIA:
 	case KEY_VOLUMEUP:
 	case KEY_VOLUMEDOWN:
 		input_report_key(hs->ipdev, key, (key_code != HS_REL_K));
-		input_sync(hs->ipdev);//FIH_Misty add
+               input_sync(hs->ipdev);//FIH_Misty add
 		break;
+	case SW_HEADPHONE_INSERT_W_MIC:
+		hs->mic_on = hs->hs_on = (key_code != HS_REL_K) ? 1 : 0;
+		input_report_switch(hs->ipdev, SW_HEADPHONE_INSERT,
+							hs->hs_on);
+		input_report_switch(hs->ipdev, SW_MICROPHONE_INSERT,
+							hs->mic_on);
+		update_state();
+		break;
+
 	case SW_HEADPHONE_INSERT:
-		report_headset_switch(hs->ipdev, key, (key_code != HS_REL_K));
-		input_sync(hs->ipdev);//FIH_Misty add
+		hs->hs_on = (key_code != HS_REL_K) ? 1 : 0;
+		input_report_switch(hs->ipdev, key, hs->hs_on);
+		update_state();
+		break;
+	case SW_MICROPHONE_INSERT:
+		hs->mic_on = (key_code != HS_REL_K) ? 1 : 0;
+		input_report_switch(hs->ipdev, key, hs->mic_on);
+		update_state();
 		break;
 	case -1:
 		printk(KERN_ERR "%s: No mapping for remote handset event %d\n",
 				 __func__, temp_key_code);
 		return;
 	}
-//	input_sync(hs->ipdev);  FIH_Misty mark
+	//input_sync(hs->ipdev);
 }
 
 static int handle_hs_rpc_call(struct msm_rpc_server *server,
@@ -348,6 +385,12 @@ static int handle_hs_rpc_call(struct msm_rpc_server *server,
 		uint32_t key_parm;
 	};
 
+/* FIH, PeterKCTseng, @20090526 { */
+/* power key support              */
+//	KEY(HS_PWR_K, KEY_POWER),
+//	KEY(HS_END_K, KEY_END),
+	//kpdev = fih_msm_keypad_get_input_dev();
+/* } FIH, PeterKCTseng, @20090526 */
 	switch (req->procedure) {
 	case RPC_KEYPAD_NULL_PROC:
 		return 0;
@@ -595,13 +638,15 @@ static int __devinit hs_rpc_init(void)
 
 	rc = hs_rpc_cb_init();
 	if (rc) {
-		pr_err("%s: failed to initialize rpc client\n", __func__);
-		return rc;
-	}
+		pr_err("%s: failed to initialize rpc client, try server...\n",
+						__func__);
 
-	rc = msm_rpc_create_server(&hs_rpc_server);
-	if (rc)
-		pr_err("%s: failed to create rpc server\n", __func__);
+		rc = msm_rpc_create_server(&hs_rpc_server);
+		if (rc) {
+			pr_err("%s: failed to create rpc server\n", __func__);
+			return rc;
+		}
+	}
 
 	return rc;
 }
@@ -612,6 +657,7 @@ static void __devexit hs_rpc_deinit(void)
 		msm_rpc_unregister_client(rpc_client);
 }
 
+#ifndef EXTERNAL_SWITCH_DEV
 static ssize_t msm_headset_print_name(struct switch_dev *sdev, char *buf)
 {
 	switch (switch_get_state(&hs->sdev)) {
@@ -622,6 +668,7 @@ static ssize_t msm_headset_print_name(struct switch_dev *sdev, char *buf)
 	}
 	return -EINVAL;
 }
+#endif
 
 static int __devinit hs_probe(struct platform_device *pdev)
 {
@@ -632,12 +679,14 @@ static int __devinit hs_probe(struct platform_device *pdev)
 	if (!hs)
 		return -ENOMEM;
 
+#ifndef EXTERNAL_SWITCH_DEV
 	hs->sdev.name	= "h2w";
 	hs->sdev.print_name = msm_headset_print_name;
 
 	rc = switch_dev_register(&hs->sdev);
 	if (rc)
 		goto err_switch_dev_register;
+#endif
 
 	ipdev = input_allocate_device();
 	if (!ipdev) {
@@ -663,7 +712,8 @@ static int __devinit hs_probe(struct platform_device *pdev)
 	input_set_capability(ipdev, EV_KEY, KEY_MEDIA);
 	input_set_capability(ipdev, EV_KEY, KEY_VOLUMEUP);
 	input_set_capability(ipdev, EV_KEY, KEY_VOLUMEDOWN);
-	//input_set_capability(ipdev, EV_SW, SW_HEADPHONE_INSERT);
+	/*input_set_capability(ipdev, EV_SW, SW_HEADPHONE_INSERT);
+	input_set_capability(ipdev, EV_SW, SW_MICROPHONE_INSERT);*/
 	input_set_capability(ipdev, EV_KEY, KEY_POWER);
 	input_set_capability(ipdev, EV_KEY, KEY_END);
 
@@ -690,9 +740,11 @@ err_hs_rpc_init:
 err_reg_input_dev:
 	input_free_device(ipdev);
 err_alloc_input_dev:
+#ifndef EXTERNAL_SWITCH_DEV
 	switch_dev_unregister(&hs->sdev);
 err_switch_dev_register:
 	kfree(hs);
+#endif
 	return rc;
 }
 
@@ -701,7 +753,9 @@ static int __devexit hs_remove(struct platform_device *pdev)
 	struct msm_handset *hs = platform_get_drvdata(pdev);
 
 	input_unregister_device(hs->ipdev);
+#ifndef EXTERNAL_SWITCH_DEV
 	switch_dev_unregister(&hs->sdev);
+#endif
 	kfree(hs);
 	hs_rpc_deinit();
 	return 0;
